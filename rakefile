@@ -1,0 +1,40 @@
+require 'rake'
+require 'rubygems'
+require 'spec/rake/spectask'
+require 'rake/gempackagetask'
+require 'lib/waz-queues'
+
+
+namespace :test do
+  Spec::Rake::SpecTask.new('run_with_rcov') do |t|
+    puts "running tests and code coverage"    
+    t.spec_files = FileList['tests/waz/queues/*.rb', 'tests/waz/blobs/*.rb', 'tests/waz/storage/*.rb']
+    t.rcov = true
+    t.rcov_opts = ['--text-report', '--exclude', "exclude.*/.gem,test,Library,#{ENV['GEM_HOME']}", '--sort', 'coverage' ]
+    t.spec_opts = ['-cfn']
+  end
+end
+
+namespace :dist do  
+  spec = Gem::Specification.new do |s|
+    s.name              = 'waz-storage'
+    s.version           = Gem::Version.new(WAZ::Storage::Version)
+    s.summary           = "Client library for Windows Azure's Storage Service's REST API"
+    s.description       = s.summary
+    s.email             = 'johnny.halife@me.com'
+    s.author            = 'Johnny G. Halife'
+    s.homepage          = 'http://github.com/johnnyhalife/waz-storage'
+    s.require_paths     = ["lib"]
+    s.files             = FileList['rakefile', 'lib/**/*.rb']
+    s.test_files        = Dir['test/**/*']
+    s.has_rdoc          = false
+    
+    # Dependencies
+    s.add_runtime_dependency 'rest-client', '>= 1.0.3'
+    s.add_dependency 'ruby-hmac'
+  end
+  
+  Rake::GemPackageTask.new(spec) do |pkg|
+    pkg.need_tar = true
+  end
+end
