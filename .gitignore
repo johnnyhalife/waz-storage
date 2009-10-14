@@ -1,0 +1,3 @@
+tests/waz/func/*
+coverage
+pkg/*
