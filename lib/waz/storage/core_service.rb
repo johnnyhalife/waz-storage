@@ -20,12 +20,11 @@ module WAZ
         return request
       end
       
-      # TODO: operations should be included as options since they're querystring params =)      
-      def generate_request_uri(operation = nil, path = nil, options = {})
+      def generate_request_uri(path = nil, options = {})
         protocol = use_ssl ? "https" : "http"
-        query_params = options.keys.sort{ |a, b| a.to_s <=> b.to_s}.map{ |k| "#{k.to_s.gsub(/_/, '')}=#{options[k]}"}.join("&") unless options.empty?
-        uri = "#{protocol}://#{account_name}.#{base_url}#{(path or "").start_with?("/") ? "" : "/"}#{(path or "")}#{operation ? "?comp=" + operation : ""}"
-        uri << "#{operation ? "&" : "?"}#{query_params}" if query_params
+        query_params = options.keys.sort{ |a, b| a.to_s <=> b.to_s}.map{ |k| "#{k.to_s.gsub(/_/, '')}=#{options[k]}"}.join("&") unless options.nil? or options.empty?
+        uri = "#{protocol}://#{account_name}.#{base_url}#{(path or "").start_with?("/") ? "" : "/"}#{(path or "")}"
+        uri << "?#{query_params}" if query_params
         return uri
       end
       

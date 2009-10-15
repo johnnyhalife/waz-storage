@@ -63,7 +63,7 @@ module WAZ
       def store(blob_name, payload, content_type, options = {})
         service_instance.put_blob("#{self.name}/#{blob_name}", payload, content_type, options)
         return BlobObject.new(:name => blob_name, 
-                              :url => service_instance.generate_request_uri(nil, "#{self.name}/#{blob_name}"),
+                              :url => service_instance.generate_request_uri("#{self.name}/#{blob_name}"),
                               :content_type => content_type)
       end
       
@@ -71,14 +71,14 @@ module WAZ
         begin
           properties = service_instance.get_blob_properties("#{self.name}/#{blob_name}")
           return BlobObject.new(:name => blob_name, 
-                                :url => service_instance.generate_request_uri(nil, "#{self.name}/#{blob_name}"),
+                                :url => service_instance.generate_request_uri("#{self.name}/#{blob_name}"),
                                 :content_type => properties[:content_type])
         rescue RestClient::ResourceNotFound
           return nil
         end
       end
       
-      # TODO: Is really this the best way of handling this scenario?
+      # TODO: Is really this the best way of handling this scenario? I don't like this to be repeated
       private
         def service_instance
           options = WAZ::Storage::Base.default_connection

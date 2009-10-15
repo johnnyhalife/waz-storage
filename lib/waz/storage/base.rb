@@ -10,6 +10,7 @@ module WAZ
 					@connection = options
 				end
 				
+				# TODO: We should raise an exception whenever connection isn't established
 				def default_connection
 					return @connection
 				end

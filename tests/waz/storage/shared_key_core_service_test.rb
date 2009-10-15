@@ -14,27 +14,27 @@ require 'lib/waz-queues'
 describe "storage service core behavior" do 
   it "should generate URI with given operation" do
     service = WAZ::Queues::Service.new("mock-account", "mock-key", "queue", true, "localhost")
-    service.generate_request_uri("list", nil).should == "https://mock-account.queue.localhost/?comp=list"
+    service.generate_request_uri(nil, :comp => 'list').should == "https://mock-account.queue.localhost/?comp=list"
   end
   
   it "should generate an URI without operation when operation is not given" do
     service = WAZ::Queues::Service.new("mock-account", "mock-key", "queue", true, "localhost")
-    service.generate_request_uri(nil, "queue").should == "https://mock-account.queue.localhost/queue"
+    service.generate_request_uri("queue").should == "https://mock-account.queue.localhost/queue"
   end
   
   it "should generate a safe URI when path includes forward slash" do
     service = WAZ::Queues::Service.new("mock-account", "mock-key", "queue", true, "localhost")
-    service.generate_request_uri(nil, "/queue").should == "https://mock-account.queue.localhost/queue"
+    service.generate_request_uri("/queue").should == "https://mock-account.queue.localhost/queue"
   end
   
   it "should include additional parameters when given" do
     service = WAZ::Queues::Service.new("mock-account", "mock-key", "queue", true, "localhost")
-    service.generate_request_uri("list", "/queue", {:prefix => "p"}).should == "https://mock-account.queue.localhost/queue?comp=list&prefix=p"
+    service.generate_request_uri("/queue", {:comp => 'list', :prefix => "p"}).should == "https://mock-account.queue.localhost/queue?comp=list&prefix=p"
   end
 
   it "should include additional parameters when given althought when there is no comp" do
     service = WAZ::Queues::Service.new("mock-account", "mock-key", "queue", true, "localhost")
-    service.generate_request_uri(nil, "/queue", {:prefix => "p", :other => "other"}).should == "https://mock-account.queue.localhost/queue?other=other&prefix=p"
+    service.generate_request_uri("/queue", {:prefix => "p", :other => "other"}).should == "https://mock-account.queue.localhost/queue?other=other&prefix=p"
   end
   
   it "should canonicalize headers (order lexicographical, trim values, and join by NEW_LINES)" do

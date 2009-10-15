@@ -10,13 +10,13 @@ module WAZ
         
         def create(queue_name, metadata = {})
           service_instance.create_queue(queue_name, metadata)
-          WAZ::Queues::Queue.new(:name => queue_name, :url => service_instance.generate_request_uri(nil, queue_name))
+          WAZ::Queues::Queue.new(:name => queue_name, :url => service_instance.generate_request_uri(queue_name))
         end
         
         def find(queue_name)
           begin 
             service_instance.get_queue_metadata(queue_name)
-            WAZ::Queues::Queue.new(:name => queue_name, :url => service_instance.generate_request_uri(nil, queue_name))
+            WAZ::Queues::Queue.new(:name => queue_name, :url => service_instance.generate_request_uri(queue_name))
           rescue RestClient::ResourceNotFound
             return nil
           end

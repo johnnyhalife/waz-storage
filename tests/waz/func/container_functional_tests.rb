@@ -15,18 +15,30 @@ describe "blobs service behavior" do
     WAZ::Storage::Base.establish_connection!(options)
     
     container = WAZ::Blobs::Container.find('momo-container')
+    container.nil?.should == false
+    
     container.put_properties!(:x_ms_meta_owner => "Ezequiel Morito")
-    p "container owner is #{container.metadata[:x_ms_meta_owner]}"
+    container.metadata[:x_ms_meta_owner].should == "Ezequiel Morito"
+
     container.public_access = true
+    container.public_access?.should == true
+    
     container.store("hello.txt", "Hola Don Julio Morito y Jedib!", "plain/text")
 
     blob = container["hello.txt"]
+    blob.nil?.should == false
+    
     blob.put_properties!(:x_ms_meta_owner => "Other owner")
-    p "new owner is #{blob.metadata[:x_ms_meta_owner]}"
-    puts blob.value
+    blob.metadata[:x_ms_meta_owner].should == "Other owner"
+    
+    blob.value.should == "Hola Don Julio Morito y Jedib!"
+    
+    container.blobs.each do |blob|
+        puts "#{blob.path}<br/>"
+    end
     
     WAZ::Blobs::Container.list.each do |container|
-        p container.name
+        puts "#{container.name}<br/>"
     end
   end
 end
