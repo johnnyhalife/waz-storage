@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(File.dirname(__FILE__) + '/../')
 require 'rubygems'
 require 'spec'
 require 'mocha'
-require 'lib/waz-blobs'
+require 'waz-blobs'
 
 describe "blobs service behavior" do
    

@@ -2,7 +2,7 @@ module WAZ
   module Storage
     module VERSION #:nodoc:
       MAJOR    = '0'
-      MINOR    = '1'
+      MINOR    = '5'
       TINY     = '0' 
     end
     
