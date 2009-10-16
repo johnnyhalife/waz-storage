@@ -26,8 +26,8 @@ I've changed the API in order to make ease that administration by requiring you 
 	require 'waz-queues' #=> if you want to use queues 
 	require 'waz-blobs' #=> if you want to use blobs (or you can include both for using both) 
 
-	service = WAZ::Storage::Base.establish_connection!(:account_name => account_name,
-	                                                   :access_key => access_key)
+	WAZ::Storage::Base.establish_connection!(:account_name => account_name,
+	                                         :access_key => access_key)
 	
 As you can see you, the way to get started it pretty simple, just include the establish_connection! call on your application bootstrapper, for example 
 if you are doing a sinatra-rb application it can be
@@ -48,8 +48,8 @@ covered here.
 
 Here's a quick getting started of the usage of the API:
 
-	service = WAZ::Storage::Base.establish_connection!(:account_name => account_name,
-	                                                  :access_key => access_key)
+	WAZ::Storage::Base.establish_connection!(:account_name => account_name,
+	                                         :access_key => access_key)
 
 	# excepts that the metadata for the queue changes this method behaves as PUT (create/replace)
 	# remarks: it performs a validation whether metadata changed or not (if changed HTTP 409 conflict)
@@ -82,8 +82,8 @@ I've been doing lot of testing around and it works seamlessly with the current W
 
 	require 'waz-blobs'
 
-	WAZ::Storage::Base.establish_connection!(:account_name => your_account_name, 
-																				   :access_key => your_account_key)
+	WAZ::Storage::Base.establish_connection!(:account_name => account_name,
+	                                         :access_key => access_key)
 
 	# creates a container
 	container = WAZ::Blobs::Container.create('my-container')
