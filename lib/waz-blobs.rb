@@ -10,8 +10,6 @@ $:.unshift(File.dirname(__FILE__))
 require 'waz-storage'
 require 'waz/blobs/blob_object'
 require 'waz/blobs/container'
-require 'waz/blobs/exceptions'
 require 'waz/blobs/service'
-require 'waz/blobs/version'
 
 

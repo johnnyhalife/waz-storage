@@ -13,6 +13,5 @@ require 'waz/queues/exceptions'
 require 'waz/queues/message'
 require 'waz/queues/queue'
 require 'waz/queues/service'
-require 'waz/queues/version'
 
 

@@ -9,7 +9,6 @@ require 'time'
 require 'hmac-sha2'
 require 'base64'
 require 'tests/configuration'
-require 'waz-storage'
 require 'waz-queues'
 
 describe "queues service behavior" do   
