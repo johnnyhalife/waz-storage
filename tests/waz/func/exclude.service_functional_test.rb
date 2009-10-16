@@ -13,8 +13,8 @@ require 'waz-queues'
 
 describe "queues service behavior" do   
   it "should satisfy my expectations" do
-    service = WAZ::Storage::Base.establish_connection!(:account_name => "copaworkshop", 
-                                                       :access_key => "cEsGVWPxnYQFpwxpqjJEPC1aROCSGlLT9yQCZmGvdGz2s19ZXjso+mV56wAiT+g+JDuIWz8qWNkrpzXBtqCm7g==")
+    service = WAZ::Storage::Base.establish_connection!(:account_name => "your_account", 
+                                                       :access_key => "your_key")
 
     # excepts that the metadata for the queue changes queue behaves with put
     # it performs a validation whether metadata changed or not (if changed HTTP 409 conflict)

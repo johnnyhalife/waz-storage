@@ -9,8 +9,8 @@ require 'waz-blobs'
 describe "blobs service behavior" do
    
   it "should satisfy my expectations" do
-     options = { :account_name => "copaworkshop", 
-                 :access_key => "cEsGVWPxnYQFpwxpqjJEPC1aROCSGlLT9yQCZmGvdGz2s19ZXjso+mV56wAiT+g+JDuIWz8qWNkrpzXBtqCm7g==" }
+     options = { :account_name => "your_account", 
+                 :access_key => "your_key" }
 
     WAZ::Storage::Base.establish_connection!(options)
     
