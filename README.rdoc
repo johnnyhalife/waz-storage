@@ -1,0 +1,134 @@
+= Windows Azure Storage library — simple gem for accessing WAZ‘s Storage REST API 
+A simple implementation of Windows Azure Storage API for Ruby, inspired by the S3 gems and self experience of dealing with queues. The major
+goal of the whole gem is to enable ruby developers [like me =)] to leverage Windows Azure Storage features and have another option 
+for cloud storage.
+
+The whole gem is implemented based on Microsoft's specs from the communication and underlying service description and protocol (REST). The API
+is for ruby developers built by a ruby developer. I'm trying to follow idioms, patterns and fluent type of doing APIs on Ruby.
+
+This work isn't related at all with StorageClient Sample shipped with Microsoft SDK and written in .NET, the whole API is based on my own understanding,
+experience and values of elegance and ruby development.
+
+Full documentation for the gem is available at http://waz-storage.heroku.com
+
+=== How does this differ from <em>waz-queues</em> and <em>waz-blobs</em> work?
+Well, this is a sum up of the whole experience of writing those gems and getting them to work together to simplify 
+end user experience. Although there're some breaking changes, it's pretty backward compatible with existing gems.
+
+== Getting started
+	sudo gem install waz-storage --source http://gemcutter.org
+	
+== Basic Configuration
+One of the major changes from the waz-queues and waz-blobs APIs was the ability to set a single storage account (99% of the cases) to be
+used on your code just once. Since Windows Azure Storage Services are all related to a single account that includes Tables, Queues and Blobs,
+I've changed the API in order to make ease that administration by requiring you to set the configuration just once:
+
+	require 'waz-queues' #=> if you want to use queues 
+	require 'waz-blobs' #=> if you want to use blobs (or you can include both for using both) 
+
+	service = WAZ::Storage::Base.establish_connection!(:account_name => account_name,
+	                                                   :access_key => access_key)
+	
+As you can see you, the way to get started it pretty simple, just include the establish_connection! call on your application bootstrapper, for example 
+if you are doing a sinatra-rb application it can be
+
+	configure :production do
+		# here is were you hook up with WAZ Storage Stuff.
+	end
+
+That's all you need to get started and running your Windows Azure Code on a sinatra application.
+
+== Usage: Queues
+Windows Azure Queues are extremely powerful for asyc programming, they are very useful when you don’t need "always consistent" 
+data operations allowing you to enqueue and process on background. It’s important to mention that being WAZ-Queues a buffered 
+message system, you should design for idempotent operations given the fact that there’s no guarantee that a message can be repeated.
+
+The implementation of the Windows Azure Queues REST API available online at http://msdn.microsoft.com/en-us/library/dd179363.aspx is fully 
+covered here. 
+
+Here's a quick getting started of the usage of the API:
+
+	service = WAZ::Storage::Base.establish_connection!(:account_name => account_name,
+	                                                  :access_key => access_key)
+
+	# excepts that the metadata for the queue changes this method behaves as PUT (create/replace)
+	# remarks: it performs a validation whether metadata changed or not (if changed HTTP 409 conflict)
+	queue = WAZ::Queues::Queue.create('my-queue')
+
+	10.times do |m|
+	  # enqueue a receives string. Message content can be anything up to 8KB
+	  # you can serialize and send anything that serializes to UTF-8 string (JSON, XML, etc)
+	  queue.enqueue!("message##{m}")
+	end
+
+	while(queue.size > 0) do
+	  # Since WAZ implements the peek lock pattern we are locking messages (not dequeuing)
+	  # it has two parameters how many messages and for how long they are locked
+	  messages = queue.lock(10)
+
+	  puts "dequeued message: #{messages.size}"
+
+	  # deletes the message from the queue so other clients do not pick it after
+	  # visibility time out expires
+	  messages.each {|m| m.destroy!}
+	end
+
+It's pretty intuitive, but full documentation (RDoc) is available for the API for further reference.
+
+== Usage: Blobs
+The blobs implementation inside this gem is fully compliant with the spec available at http://msdn.microsoft.com/en-us/library/dd135733.aspx. The Windows 
+Azure Blobs REST API isn't fully covered here (see TODO's for more information). It's pretty usable and stable right now, 
+I've been doing lot of testing around and it works seamlessly with the current Windows Azure implementation.
+
+	require 'waz-blobs'
+
+	WAZ::Storage::Base.establish_connection!(:account_name => your_account_name, 
+																				   :access_key => your_account_key)
+
+	# creates a container
+	container = WAZ::Blobs::Container.create('my-container')
+
+	# stores a blob with custom properties (metadata)
+	blob = container.store('my_blob.txt',  
+				 'this is the content of my blob', 
+				 'plain/text', 
+				 {:x_ms_meta_Custom_Property => "custom_value" })
+
+	# return a specific blob from a container
+	blob = container['my_blob.txt']
+
+	# retrieves a blob value
+	blob.value
+
+It's pretty intuitive, but full documentation (RDoc) is available for the API for further reference.	
+
+== Usage: Tables
+Not yet, but soon may be.
+
+=== Remarks
+Windows Azure Storage API works flawlessly from Heroku and custom ruby hosting deployments on EC2, as far as I tested it. You can leverage the storage
+services without the need of having to write the application on .NET or hosting your application on Windows Azure.
+
+The documentation and implementation exposed here is for the pre-release version and is subject to change on the future. 
+
+=== TODO's
+As far as users start using it, I'll be building a backlog and probably handling a wish-list of features, but right now I've the following 
+TODO's already enqueued for further releases of the waz-storage API.
+
+- Implement the remaining features of Blobs (Copy-Blob, Blocks Management)
+- Implement Tables API (ATOM FEED).
+- Generate a sample application to better show the usage.
+
+The things listed above do not represent any sort of priority, or the order they are going to be tackled. It's just a list. 
+
+== Meta
+
+Written by Johnny G. Halife (johnny.halife at me dot com)
+
+contributed by: Ezequiel Morito (http://twitter.com/ezequielm) and Juan Pablo Garcia (http://twitter.com/jpgd)
+
+Released under the MIT License: http://www.opensource.org/licenses/mit-license.php
+
+http://waz-storage.heroku.com
+
+http://github.com/johnnyhalife/waz-storage

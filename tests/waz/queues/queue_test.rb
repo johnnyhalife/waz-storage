@@ -9,7 +9,7 @@ require 'lib/waz-queues'
 
 describe "Queue object behavior" do
   it "should list queues by name" do
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:list_queues).returns([{:name => 'queue1', :url => 'queue1_url'}, {:name => 'queue2', :url => 'queue2_url'}])
     containers = WAZ::Queues::Queue.list
     containers.size.should == 2
@@ -27,7 +27,7 @@ describe "Queue object behavior" do
   end
   
   it "should create queue" do
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"}).twice
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:create_queue)
     queue = WAZ::Queues::Queue.create('queue1') 
     queue.name.should == "queue1"
@@ -35,7 +35,7 @@ describe "Queue object behavior" do
   end
   
   it "should find queue" do
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"}).twice
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:get_queue_metadata).returns {  }
     queue = WAZ::Queues::Queue.find('queue1') 
     queue.name.should == "queue1"
@@ -43,14 +43,14 @@ describe "Queue object behavior" do
   end
   
   it "should return null when the queue isn't found" do
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"}).once
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:get_queue_metadata).with("queue1").raises(RestClient::ResourceNotFound)
     queue = WAZ::Queues::Queue.find('queue1') 
     queue.nil?.should == true
   end
   
   it "should delete queue" do
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"}).at_most(3)
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:get_queue_metadata).with("queue1").returns({})
     WAZ::Queues::Service.any_instance.expects(:delete_queue).with("queue1").returns()
     queue = WAZ::Queues::Queue.find('queue1') 
@@ -58,14 +58,14 @@ describe "Queue object behavior" do
   end
   
   it "should get queue metadata" do
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"}).at_most(3)
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:get_queue_metadata).with("queue1").returns({:x_ms_meta_property => "value"}).twice
     queue = WAZ::Queues::Queue.find('queue1') 
     queue.metadata[:x_ms_meta_property].should == "value"
   end
   
   it "should get queue length" do
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"}).at_most(3)
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:get_queue_metadata).with("queue1").returns({:x_ms_approximate_messages_count => "2"}).twice
     queue = WAZ::Queues::Queue.find('queue1') 
     queue.size.should == 2
@@ -74,7 +74,7 @@ describe "Queue object behavior" do
   it "should merge queue metadata new metadata" do
     existing_metadata = {:x_ms_approximate_message_count => 2, :x_ms_request_id => 2, :x_ms_meta_property1 => "value1"}
     valid_metadata = {:x_ms_meta_property1 => "value1"}
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"}).at_most(4)
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:get_queue_metadata).with("queue1").returns(existing_metadata).twice
     WAZ::Queues::Service.any_instance.expects(:set_queue_metadata).with(valid_metadata.merge(:x_ms_meta_property2 => "value2"))
     queue = WAZ::Queues::Queue.find('queue1') 
@@ -83,7 +83,7 @@ describe "Queue object behavior" do
   
   it "should override queue metadata new metadata" do
     existing_metadata = {:x_ms_approximate_message_count => 2, :x_ms_request_id => 2, :x_ms_meta_property1 => "value1"}
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"}).at_most(4)
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:get_queue_metadata).with("queue1").returns(existing_metadata)
     WAZ::Queues::Service.any_instance.expects(:set_queue_metadata).with({:x_ms_meta_property2 => "value2"})
     queue = WAZ::Queues::Queue.find('queue1') 
@@ -91,7 +91,7 @@ describe "Queue object behavior" do
   end
   
   it "should enqueue message on the queue" do
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"}).at_most(3)
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:get_queue_metadata).with("queue1").returns({}).once
     WAZ::Queues::Service.any_instance.expects(:enqueue).with("queue1", "this is my message enqueued", 604800)
     queue = WAZ::Queues::Queue.find('queue1') 
@@ -99,7 +99,7 @@ describe "Queue object behavior" do
   end
   
   it "should enqueue message on the queue with specific time to live" do
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"}).at_most(3)
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:get_queue_metadata).with("queue1").returns({}).once
     WAZ::Queues::Service.any_instance.expects(:enqueue).with("queue1", "this is my message enqueued", 600)
     queue = WAZ::Queues::Queue.find('queue1') 
@@ -108,7 +108,7 @@ describe "Queue object behavior" do
   
   it "should peek lock a single message from the queue" do
     expected_message = {:message_id => "message id", :message_text => "text", :expiration_time => Time.new, :insertion_time => Time.new, :pop_receipt => "receipt"}
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"}).at_most(3)
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:get_queue_metadata).with("queue1").returns({}).once
     WAZ::Queues::Service.any_instance.expects(:get_messages).with('queue1', {:num_of_messages => 1}).returns([expected_message])
     queue = WAZ::Queues::Queue.find('queue1') 
@@ -123,7 +123,7 @@ describe "Queue object behavior" do
     expected_messages = [ {:message_id => "message id", :message_text => "text", :expiration_time => Time.new, :insertion_time => Time.new, :pop_receipt => "receipt"},
                          {:message_id => "message id2", :message_text => "text-second", :expiration_time => Time.new, :insertion_time => Time.new, :pop_receipt => "receipt"}]
                          
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"}).at_most(3)
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:get_queue_metadata).with("queue1").returns({}).once
     WAZ::Queues::Service.any_instance.expects(:get_messages).with('queue1', {:num_of_messages => 2}).returns(expected_messages)
     queue = WAZ::Queues::Queue.find('queue1') 
@@ -136,7 +136,7 @@ describe "Queue object behavior" do
   
   it "should peek a single message from the queue" do
     expected_message = {:message_id => "message id", :message_text => "text", :expiration_time => Time.new, :insertion_time => Time.new, :pop_receipt => "receipt"}
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"}).at_most(3)
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:get_queue_metadata).with("queue1").returns({}).once
     WAZ::Queues::Service.any_instance.expects(:peek).with('queue1', {:num_of_messages => 1}).returns([expected_message])
     queue = WAZ::Queues::Queue.find('queue1') 
@@ -151,7 +151,7 @@ describe "Queue object behavior" do
     expected_messages = [{:message_id => "message id", :message_text => "text", :expiration_time => Time.new, :insertion_time => Time.new, :pop_receipt => "receipt"},
                          {:message_id => "message id2", :message_text => "text-second", :expiration_time => Time.new, :insertion_time => Time.new, :pop_receipt => "receipt"}]
                          
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"}).at_most(3)
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:get_queue_metadata).with("queue1").returns({}).once
     WAZ::Queues::Service.any_instance.expects(:peek).with('queue1', {:num_of_messages => 2}).returns(expected_messages)
     queue = WAZ::Queues::Queue.find('queue1') 
@@ -163,7 +163,7 @@ describe "Queue object behavior" do
   end
   
   it "should clear queue" do
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"}).at_most(3)
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:get_queue_metadata).with("queue1").returns({}).once
     WAZ::Queues::Service.any_instance.expects(:clear_queue).with('queue1').returns()
     queue = WAZ::Queues::Queue.find('queue1') 

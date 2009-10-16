@@ -9,7 +9,7 @@ require 'lib/waz-queues'
 
 describe "Message object behavior" do
   it "should delete message" do
-    WAZ::Storage::Base.expects(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Queues::Service.any_instance.expects(:delete_message).with("queue-10", "message id", "receipt")
     options = {:message_id => "message id", :message_text => "text", :expiration_time => Time.new, 
                :insertion_time => Time.new, :pop_receipt => "receipt", :queue_name => "queue-10" }

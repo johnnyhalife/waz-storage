@@ -8,10 +8,14 @@ require 'restclient'
 require 'lib/waz-blobs'
 
 describe "Base class for connection management" do
+  it "should throw an exception when it is not connected" do
+    lambda {WAZ::Storage::Base.default_connection}.should raise_error(WAZ::Storage::NotConnected)
+  end
+  
   it "establish connection and set it as default connection" do
     WAZ::Storage::Base.establish_connection!(:account_name => 'myAccount',
-                                           :access_key => "accountKey",
-                                           :use_ssl => true)
+                                             :access_key => "accountKey",
+                                             :use_ssl => true)
 
     connection = WAZ::Storage::Base.default_connection                                     
     connection[:account_name].should == "myAccount"
@@ -20,7 +24,7 @@ describe "Base class for connection management" do
   end
   
   it "should throw an exception when no account_name is provided" do
-    lambda {WAZ::Storage::Base.establish_connection!(:account_key => "accountKey", :use_ssl => false)}.should raise_error(WAZ::Storage::InvalidOption)
+    lambda {WAZ::Storage::Base.establish_connection!(:access_key => "accountKey", :use_ssl => false)}.should raise_error(WAZ::Storage::InvalidOption)
   end
   
   it "should throw an exception when no access_key is provided" do

@@ -1,3 +1,4 @@
-tests/waz/func/*
+tests/waz/func/*.rb
 coverage
 pkg/*
+rdoc/*
