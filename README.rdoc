@@ -102,6 +102,24 @@ I've been doing lot of testing around and it works seamlessly with the current W
 
 It's pretty intuitive, but full documentation (RDoc) is available for the API for further reference.	
 
+== Usage: Contextual Connection Handling
+Sometimes while you are building a web application you may require handling different storage account but contextualized. The sample
+that comes to my mind is something like a Storage Explorer or Account Monitor for WAZ. 
+
+That is why? I've added a new way of handling a stack-based contextual connection handling. The usage is pretty simple:
+	
+	WAZ::Storage::Base.establish_connection(options) do
+		container = WAZ::Blobs::Container.find('container-name')
+		blob = container['blob-name']
+		blob.destroy!
+	end
+
+As it is described on the example above, there's a new way of establishing a connection and use it on a given block. The whole implementation
+is stack based, and will let you scope your context for some rare cases where you have another account.
+
+*Disclaimer*: Moving objects across context isn't contemplated yet, and if you try to do changes among scopes you will get 
+to some wired Windows Azure Errors regarding objects that may not exist.
+
 == Usage: Tables
 Not yet, but soon may be.
 
