@@ -8,7 +8,7 @@ require 'waz/storage/version'
 # but this method is required so we will add it the String class.
 unless String.method_defined? :start_with?
   class String
-    def starts_with?(prefix)
+    def start_with?(prefix)
       prefix = prefix.to_s
       self[0, prefix.length] == prefix
     end

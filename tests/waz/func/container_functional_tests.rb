@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(File.dirname(__FILE__) + '/../')
 require 'rubygems'
 require 'spec'
 require 'mocha'
-require 'lib/waz-blobs'
+require 'waz-blobs'
 
 describe "blobs service behavior" do
    
@@ -40,5 +40,7 @@ describe "blobs service behavior" do
           puts "#{container.name}<br/>"
       end
     end
+    
+    WAZ::Storage::Base.connected?.should == false
   end
 end
