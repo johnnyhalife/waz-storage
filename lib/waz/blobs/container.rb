@@ -64,7 +64,8 @@ module WAZ
         # service that wraps the calls the Windows Azure Blobs API. It's initialized with the values
         # from the default_connection on WAZ::Storage::Base initialized thru establish_connection!
         def service_instance
-          @service_instance ||= Service.new(WAZ::Storage::Base.default_connection.merge(:type_of_service => "blob"))
+          options = WAZ::Storage::Base.default_connection.merge(:type_of_service => "blob")
+          (@service_instances ||= {})[:account_name] ||= Service.new(options)
         end        
       end
       

@@ -4,41 +4,41 @@ $LOAD_PATH.unshift(File.dirname(__FILE__) + '/../')
 require 'rubygems'
 require 'spec'
 require 'mocha'
-require 'waz-blobs'
+require 'lib/waz-blobs'
 
 describe "blobs service behavior" do
    
   it "should satisfy my expectations" do
-     options = { :account_name => "your_account", 
-                 :access_key => "your_key" }
+     options = { :account_name => "copaworkshop", 
+                 :access_key => "cEsGVWPxnYQFpwxpqjJEPC1aROCSGlLT9yQCZmGvdGz2s19ZXjso+mV56wAiT+g+JDuIWz8qWNkrpzXBtqCm7g==" }
 
-    WAZ::Storage::Base.establish_connection!(options)
+    WAZ::Storage::Base.establish_connection(options) do    
+      container = WAZ::Blobs::Container.find('momo-container')
+      container.nil?.should == false
     
-    container = WAZ::Blobs::Container.find('momo-container')
-    container.nil?.should == false
-    
-    container.put_properties!(:x_ms_meta_owner => "Ezequiel Morito")
-    container.metadata[:x_ms_meta_owner].should == "Ezequiel Morito"
+      container.put_properties!(:x_ms_meta_owner => "Ezequiel Morito")
+      container.metadata[:x_ms_meta_owner].should == "Ezequiel Morito"
 
-    container.public_access = true
-    container.public_access?.should == true
+      container.public_access = true
+      container.public_access?.should == true
     
-    container.store("hello.txt", "Hola Don Julio Morito y Jedib!", "plain/text")
+      container.store("hello.txt", "Hola Don Julio Morito y Jedib!", "plain/text")
 
-    blob = container["hello.txt"]
-    blob.nil?.should == false
+      blob = container["hello.txt"]
+      blob.nil?.should == false
     
-    blob.put_properties!(:x_ms_meta_owner => "Other owner")
-    blob.metadata[:x_ms_meta_owner].should == "Other owner"
+      blob.put_properties!(:x_ms_meta_owner => "Other owner")
+      blob.metadata[:x_ms_meta_owner].should == "Other owner"
     
-    blob.value.should == "Hola Don Julio Morito y Jedib!"
+      blob.value.should == "Hola Don Julio Morito y Jedib!"
     
-    container.blobs.each do |blob|
-        puts "#{blob.path}<br/>"
-    end
+      container.blobs.each do |blob|
+          puts "#{blob.path}<br/>"
+      end
     
-    WAZ::Blobs::Container.list.each do |container|
-        puts "#{container.name}<br/>"
+      WAZ::Blobs::Container.list.each do |container|
+          puts "#{container.name}<br/>"
+      end
     end
   end
 end

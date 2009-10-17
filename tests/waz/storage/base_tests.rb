@@ -47,4 +47,19 @@ describe "Base class for connection management" do
     
     WAZ::Storage::Base.connected?.should == true
   end  
+  
+  it "should be able manage scoped connections" do
+    WAZ::Storage::Base.establish_connection!(:account_name => 'myAccount', :access_key => "accountKey")
+    
+    WAZ::Storage::Base.default_connection[:account_name].should == 'myAccount'
+
+    block_executed = false
+    WAZ::Storage::Base.establish_connection(:account_name => 'otherAccount', :access_key => "accountKey") do
+      WAZ::Storage::Base.default_connection[:account_name].should == 'otherAccount'
+      block_executed = true
+    end
+    block_executed.should == true
+    
+    WAZ::Storage::Base.default_connection[:account_name].should == 'myAccount'    
+  end
 end
