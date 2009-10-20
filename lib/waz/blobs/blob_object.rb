@@ -80,6 +80,18 @@ module WAZ
         self.class.service_instance.delete_blob(path)
       end
       
+      # Copies the blob to the destination and returns
+      # the copied blob instance. 
+      #
+      # destination should be formed as "container/blob"
+      def copy(destination)
+        self.class.service_instance.copy_blob(self.path, destination)
+        properties = self.class.service_instance.get_blob_properties(destination)
+        return BlobObject.new(:name => destination, 
+                              :url => self.class.service_instance.generate_request_uri(destination),
+                              :content_type => properties[:content_type])
+      end
+      
       # Returns the blob path. This is specially important when simulating containers inside containers
       # by enabling the API to point to the appropiated resource.
       def path

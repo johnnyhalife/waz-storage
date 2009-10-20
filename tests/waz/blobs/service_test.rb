@@ -165,4 +165,12 @@ describe "blobs service behavior" do
     service.expects(:generate_request).with("PUT", "mock-uri", {:x_ms_meta_Name => "johnny"}).returns(RestClient::Request.new(:method => "GET", :url => "http://localhost"))
     service.set_blob_properties("container/blob", {:x_ms_meta_Name => "johnny"})
   end
+  
+  it "should copy blob" do
+    service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
+    RestClient::Request.any_instance.expects(:execute).returns(nil)
+    service.expects(:generate_request_uri).with("container/blob-copy").returns("mock-uri")
+    service.expects(:generate_request).with("PUT", "mock-uri", {:x_ms_version => "2009-04-14", :x_ms_copy_source => "/mock-account/container/blob"}).returns(RestClient::Request.new(:method => "GET", :url => "http://localhost"))
+    service.copy_blob("container/blob", "container/blob-copy")
+  end
 end

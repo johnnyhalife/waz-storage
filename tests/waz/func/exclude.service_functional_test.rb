@@ -9,12 +9,14 @@ require 'time'
 require 'hmac-sha2'
 require 'base64'
 require 'tests/configuration'
-require 'waz-queues'
+require 'lib/waz-queues'
 
 describe "queues service behavior" do   
   it "should satisfy my expectations" do
-    service = WAZ::Storage::Base.establish_connection!(:account_name => "your_account", 
-                                                       :access_key => "your_key")
+    options = { :account_name => "wazstoragejohnny", 
+                :access_key => "Tm870FVNS14aNW1zsn13fZykc4yDKz82W8m4qujIZTayOJvhOePsjSFIsFnQF8rPnDaRJQJwzhoziI7ZtIWTsQ==" }
+
+    service = WAZ::Storage::Base.establish_connection!(options)
 
     # excepts that the metadata for the queue changes queue behaves with put
     # it performs a validation whether metadata changed or not (if changed HTTP 409 conflict)

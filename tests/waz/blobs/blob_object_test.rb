@@ -49,4 +49,13 @@ describe "Windows Azure Blobs interface API" do
     blob = WAZ::Blobs::BlobObject.new(:name => "blob_name", :url => "http://localhost/container/blob", :content_type => "application/xml")  
    blob.destroy!
   end
+  
+  it "should copy blob" do
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my_account", :access_key => "key"})   
+    WAZ::Blobs::BlobObject.service_instance.expects(:copy_blob).with('container/blob', 'container/blob-copy')
+    WAZ::Blobs::BlobObject.service_instance.expects(:get_blob_properties).with('container/blob-copy').returns(:content_type => "plain/text")
+    blob = WAZ::Blobs::BlobObject.new(:name => "blob_name", :url => "http://localhost/container/blob", :content_type => "plain/text")  
+    copy = blob.copy('container/blob-copy')
+    copy.path.should == "container/blob-copy"
+  end
 end

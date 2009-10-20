@@ -124,6 +124,13 @@ module WAZ
         request = generate_request("PUT", url, properties)
         request.execute()
       end
+      
+      # Copies a blob within the same account (not necessarily to the same container)
+      def copy_blob(source_path, dest_path)
+        url = generate_request_uri(dest_path)
+        request = generate_request("PUT", url, :x_ms_version => "2009-04-14", :x_ms_copy_source => canonicalize_message(source_path))
+        request.execute()
+      end
     end
   end
 end
