@@ -7,9 +7,8 @@ module WAZ
       
       # Lists the queues on the given storage account.
       def list_queues(options ={})
-        url = generate_request_uri(nil, :comp => 'list')
-        request = generate_request("GET", url)
-        doc = REXML::Document.new(request.execute())
+        content = execute(:get, nil, { :comp => 'list' })
+        doc = REXML::Document.new(content)
         queues = []
          REXML::XPath.each(doc, '//Queue/') do |item|
             queues << { :name => REXML::XPath.first(item, "QueueName").text,
@@ -22,9 +21,7 @@ module WAZ
       # existing metadata and given metadata differ.
       def create_queue(queue_name, metadata = {})
         begin
-          url = generate_request_uri(queue_name)
-          request = generate_request("PUT", url, metadata)
-          request.execute()
+          execute :put, queue_name, nil, metadata
         rescue RestClient::RequestFailed
           raise WAZ::Queues::QueueAlreadyExists, queue_name if $!.http_code == 409
         end
@@ -32,23 +29,17 @@ module WAZ
       
       # Deletes the given queue from the current storage account.
       def delete_queue(queue_name)
-        url = generate_request_uri(queue_name)
-        request = generate_request("DELETE", url)
-        request.execute()
+        execute :delete, queue_name
       end
       
       # Gets the given queue metadata.
       def get_queue_metadata(queue_name)
-        url = generate_request_uri(queue_name, :comp => 'metadata')
-        request = generate_request("HEAD", url)
-        request.execute().headers
+        execute(:head, queue_name, { :comp => 'metadata'}).headers
       end
       
       # Sets the given queue metadata.
       def set_queue_metadata(queue_name, metadata = {})
-        url = generate_request_uri(queue_name, :comp => 'metadata')
-        request = generate_request("PUT", url, metadata)
-        request.execute()
+        execute(:put, queue_name, { :comp => 'metadata' }, metadata)
       end
       
       # Enqueues a message on the current queue.
@@ -56,10 +47,8 @@ module WAZ
       # ttl Specifies the time-to-live interval for the message, in seconds. The maximum time-to-live allowed is 7 days. If this parameter
       # is omitted, the default time-to-live is 7 days.
       def enqueue(queue_name, message_payload, ttl = 604800)
-        url = generate_request_uri("#{queue_name}/messages", "messagettl" => ttl)
         payload = "<?xml version=\"1.0\" encoding=\"utf-8\"?><QueueMessage><MessageText>#{message_payload}</MessageText></QueueMessage>"
-        request = generate_request("POST", url, { "Content-Type" => "application/xml" }, payload)
-        request.execute()
+        execute(:post, "#{queue_name}/messages", { :messagettl => ttl }, { 'Content-Type' => 'application/xml' }, payload)
       end
       
       # Locks N messages (1 default) from the given queue.
@@ -70,9 +59,8 @@ module WAZ
       def get_messages(queue_name, options = {})
         raise WAZ::Queues::OptionOutOfRange, {:name => :num_of_messages, :min => 1, :max => 32} if (options.keys.include?(:num_of_messages) && (options[:num_of_messages].to_i < 1 || options[:num_of_messages].to_i > 32))
         raise WAZ::Queues::OptionOutOfRange, {:name => :visibility_timeout, :min => 1, :max => 7200} if (options.keys.include?(:visibility_timeout) && (options[:visibility_timeout].to_i < 1 || options[:visibility_timeout].to_i > 7200))
-        url = generate_request_uri("#{queue_name}/messages", options)
-        request = generate_request("GET", url)
-        doc = REXML::Document.new(request.execute())
+        content = execute(:get, "#{queue_name}/messages", options)
+        doc = REXML::Document.new(content)
         messages = []
         REXML::XPath.each(doc, '//QueueMessage/') do |item|
           message = { :message_id => REXML::XPath.first(item, "MessageId").text,
@@ -98,16 +86,12 @@ module WAZ
       # Deletes the given message from the queue, correlating the operation with the pop_receipt
       # in order to avoid eventually inconsistent scenarios.
       def delete_message(queue_name, message_id, pop_receipt)
-        url = generate_request_uri("#{queue_name}/messages/#{message_id}", :pop_receipt => pop_receipt)
-        request = generate_request("DELETE", url)
-        request.execute()
+        execute :delete, "#{queue_name}/messages/#{message_id}", { :pop_receipt => pop_receipt }
       end
       
       # Marks every message on the given queue for deletion.
       def clear_queue(queue_name)
-        url = generate_request_uri("#{queue_name}/messages")
-        request = generate_request("DELETE", url)
-        request.execute()
+        execute :delete, "#{queue_name}/messages"
       end
     end
   end

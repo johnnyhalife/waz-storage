@@ -16,8 +16,8 @@ describe "blobs service behavior" do
   it "should create container" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute)
-    service.expects(:generate_request_uri).with("mock-container").returns("mock-uri")
-    service.expects(:generate_request).with("PUT", "mock-uri").returns(RestClient::Request.new(:method => "PUT", :url => "http://localhost"))
+    service.expects(:generate_request_uri).with("mock-container", {}).returns("mock-uri")
+    service.expects(:generate_request).with(:put, "mock-uri", {}, nil).returns(RestClient::Request.new(:method => :put, :url => "http://localhost"))
     service.create_container('mock-container')
   end
    
@@ -26,8 +26,8 @@ describe "blobs service behavior" do
     mock_response = mock()
     mock_response.stubs(:headers).returns(RestClient::Response.beautify_headers({"x-ms-meta-Name" => "customName"}))
     RestClient::Request.any_instance.expects(:execute).returns(mock_response)
-    service.expects(:generate_request_uri).with("mock-container").returns("mock-uri")
-    service.expects(:generate_request).with("GET", "mock-uri").returns(RestClient::Request.new(:method => "GET", :url => "http://localhost"))
+    service.expects(:generate_request_uri).with("mock-container", {}).returns("mock-uri")
+    service.expects(:generate_request).with(:get, "mock-uri", {}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
     properties = service.get_container_properties('mock-container')
     properties[:x_ms_meta_Name].should == "customName"
   end
@@ -36,7 +36,7 @@ describe "blobs service behavior" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute)
     service.expects(:generate_request_uri).with("mock-container", {:comp => 'metadata'}).returns("mock-uri")
-    service.expects(:generate_request).with("PUT", "mock-uri", {:x_ms_meta_Name => "myName"}).returns(RestClient::Request.new(:method => "PUT", :url => "http://localhost"))
+    service.expects(:generate_request).with(:put, "mock-uri", {:x_ms_meta_Name => "myName"}, nil).returns(RestClient::Request.new(:method => :put, :url => "http://localhost"))
     properties = service.set_container_properties('mock-container', {:x_ms_meta_Name => "myName"})
   end
   
@@ -46,7 +46,7 @@ describe "blobs service behavior" do
     mock_response.stubs(:headers).returns(RestClient::Response.beautify_headers({"x-ms-prop-publicaccess" => true.to_s}))
     RestClient::Request.any_instance.expects(:execute).returns(mock_response)
     service.expects(:generate_request_uri).with("mock-container", {:comp => 'acl'}).returns("mock-uri")
-    service.expects(:generate_request).with("GET", "mock-uri").returns(RestClient::Request.new(:method => "GET", :url => "http://localhost"))
+    service.expects(:generate_request).with(:get, "mock-uri", {}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
     service.get_container_acl('mock-container').should == true
   end
   
@@ -54,7 +54,7 @@ describe "blobs service behavior" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute)
     service.expects(:generate_request_uri).with("mock-container", :comp => 'acl').returns("mock-uri")
-    service.expects(:generate_request).with("PUT", "mock-uri", {"x-ms-prop-publicaccess" => "false"}).returns(RestClient::Request.new(:method => "PUT", :url => "http://localhost"))
+    service.expects(:generate_request).with(:put, "mock-uri", {:x_ms_prop_publicaccess => "false"}, nil).returns(RestClient::Request.new(:method => :put, :url => "http://localhost"))
     properties = service.set_container_acl('mock-container', false)
   end
   
@@ -79,7 +79,7 @@ describe "blobs service behavior" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute).returns(response)
     service.expects(:generate_request_uri).with(nil, {:comp => 'list'}).returns("mock-uri")
-    service.expects(:generate_request).with("GET", "mock-uri").returns(RestClient::Request.new(:method => "GET", :url => "http://localhost"))
+    service.expects(:generate_request).with(:get, "mock-uri", {}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
     containers = service.list_containers
     containers[0][:name].should == "mycontainer"
     containers[1][:name].should == "othercontainer"    
@@ -88,8 +88,8 @@ describe "blobs service behavior" do
   it "should delete container" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute)
-    service.expects(:generate_request_uri).with("mock-container").returns("mock-uri")
-    service.expects(:generate_request).with("DELETE", "mock-uri").returns(RestClient::Request.new(:method => "PUT", :url => "http://localhost"))
+    service.expects(:generate_request_uri).with("mock-container", {}).returns("mock-uri")
+    service.expects(:generate_request).with(:delete, "mock-uri", {}, nil).returns(RestClient::Request.new(:method => :put, :url => "http://localhost"))
     service.delete_container('mock-container')
   end
   
@@ -113,8 +113,8 @@ describe "blobs service behavior" do
                 eos
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute).returns(response)
-    service.expects(:generate_request_uri).with("container", :comp => 'list').returns("mock-uri")
-    service.expects(:generate_request).with("GET", "mock-uri").returns(RestClient::Request.new(:method => "GET", :url => "http://localhost"))
+    service.expects(:generate_request_uri).with("container", {:comp => 'list'}).returns("mock-uri")
+    service.expects(:generate_request).with(:get, "mock-uri", {}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
     blobs = service.list_blobs("container")
     blobs[0][:name].should == "blob"
     blobs[1][:name].should == "blob2"
@@ -127,24 +127,24 @@ describe "blobs service behavior" do
   it "should put blob" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute).returns(nil)
-    service.expects(:generate_request_uri).with("container/blob").returns("mock-uri")
-    service.expects(:generate_request).with("PUT", "mock-uri", {'Content-Type' => 'application/octet-stream'}, "payload").returns(RestClient::Request.new(:method => "PUT", :url => "http://localhost"))
+    service.expects(:generate_request_uri).with("container/blob", nil).returns("mock-uri")
+    service.expects(:generate_request).with(:put, "mock-uri", {'Content-Type' => 'application/octet-stream'}, "payload").returns(RestClient::Request.new(:method => :put, :url => "http://localhost"))
     service.put_blob("container/blob", "payload")
   end
   
   it "should get blob" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute).returns("payload")
-    service.expects(:generate_request_uri).with("container/blob").returns("mock-uri")
-    service.expects(:generate_request).with("GET", "mock-uri").returns(RestClient::Request.new(:method => "GET", :url => "http://localhost"))
+    service.expects(:generate_request_uri).with("container/blob", {}).returns("mock-uri")
+    service.expects(:generate_request).with(:get, "mock-uri", {}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
     service.get_blob("container/blob").should == "payload"
   end
   
   it "should delete blob" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute).returns(nil)
-    service.expects(:generate_request_uri).with("container/blob").returns("mock-uri")
-    service.expects(:generate_request).with("DELETE", "mock-uri").returns(RestClient::Request.new(:method => "PUT", :url => "http://localhost"))
+    service.expects(:generate_request_uri).with("container/blob", {}).returns("mock-uri")
+    service.expects(:generate_request).with(:delete, "mock-uri", {}, nil).returns(RestClient::Request.new(:method => :put, :url => "http://localhost"))
     service.delete_blob("container/blob")
   end
   
@@ -153,8 +153,8 @@ describe "blobs service behavior" do
     response = mock()
     response.stubs(:headers).returns(RestClient::Response.beautify_headers({"x-ms-meta-Name" => "customName"}))
     RestClient::Request.any_instance.expects(:execute).returns(response)
-    service.expects(:generate_request_uri).with("container/blob").returns("mock-uri")
-    service.expects(:generate_request).with("HEAD", "mock-uri").returns(RestClient::Request.new(:method => "GET", :url => "http://localhost"))
+    service.expects(:generate_request_uri).with("container/blob", {}).returns("mock-uri")
+    service.expects(:generate_request).with(:head, "mock-uri", {}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
     service.get_blob_properties("container/blob").should == response.headers
   end
   
@@ -162,15 +162,15 @@ describe "blobs service behavior" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute).returns(nil)
     service.expects(:generate_request_uri).with("container/blob", :comp => 'metadata').returns("mock-uri")
-    service.expects(:generate_request).with("PUT", "mock-uri", {:x_ms_meta_Name => "johnny"}).returns(RestClient::Request.new(:method => "GET", :url => "http://localhost"))
+    service.expects(:generate_request).with(:put, "mock-uri", {:x_ms_meta_Name => "johnny"}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
     service.set_blob_properties("container/blob", {:x_ms_meta_Name => "johnny"})
   end
   
   it "should copy blob" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute).returns(nil)
-    service.expects(:generate_request_uri).with("container/blob-copy").returns("mock-uri")
-    service.expects(:generate_request).with("PUT", "mock-uri", {:x_ms_version => "2009-04-14", :x_ms_copy_source => "/mock-account/container/blob"}).returns(RestClient::Request.new(:method => "GET", :url => "http://localhost"))
+    service.expects(:generate_request_uri).with("container/blob-copy", nil).returns("mock-uri")
+    service.expects(:generate_request).with(:put, "mock-uri", {:x_ms_version => "2009-04-14", :x_ms_copy_source => "/mock-account/container/blob"}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
     service.copy_blob("container/blob", "container/blob-copy")
   end
 end

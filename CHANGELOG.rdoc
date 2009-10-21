@@ -1,0 +1,15 @@
+= Revision History for Windows Azure Storage for Ruby
+
+=== v0.5.5 -  (Johnny Halife)
+- Added a Change Log
+- Added support for copy-blob [WAZ::Blobs::BlobObject.copy("container/blobname")]
+
+=== v0.5.4 - Sat Oct 17 19:35:48 2009 -0300 (Johnny Halife)
+- Fixed method name for String.start_with? (previously starts_with?)
+
+=== v0.5.3 - Sat Oct 17 18:20:51 2009 -0300 (Johnny Halife)
+- Added the stack-based contextual connection handling (WAZ::Storage::Base.establish_connection {|block| } 
+- Added string extensions for non rails environments (and work to work on heroku) String.starts_with?
+
+=== v0.5.2 - Thu Oct 15 22:08:01 2009 -0300 (Johnny Halife)
+- Initial Version

@@ -133,7 +133,7 @@ The documentation and implementation exposed here is for the pre-release version
 As far as users start using it, I'll be building a backlog and probably handling a wish-list of features, but right now I've the following 
 TODO's already enqueued for further releases of the waz-storage API.
 
-- Implement the remaining features of Blobs (Copy-Blob, Blocks Management)
+- Implement the remaining features of Blobs (Blocks Management)
 - Implement Tables API (ATOM FEED).
 - Generate a sample application to better show the usage.
 

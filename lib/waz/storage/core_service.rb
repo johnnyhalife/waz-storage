@@ -19,7 +19,7 @@ module WAZ
       def generate_request(verb, url, headers = {}, payload = nil)
         http_headers = {}
         headers.each{ |k, v| http_headers[k.to_s.gsub(/_/, '-')] = v} unless headers.nil?
-        request = RestClient::Request.new(:method => verb.downcase.to_sym, :url => url, :headers => http_headers, :payload => payload)
+        request = RestClient::Request.new(:method => verb.to_s.downcase.to_sym, :url => url, :headers => http_headers, :payload => payload)
         request.headers["x-ms-Date"] = Time.new.httpdate
         request.headers["Content-Length"] = (request.payload or "").length
         request.headers["Authorization"] = "SharedKey #{account_name}:#{generate_signature(request)}"
@@ -64,7 +64,15 @@ module WAZ
                      canonicalize_message(request.url)
                      
          return Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature.toutf8).digest)
-       end
+      end
+      
+      # Generates a Windows Azure Storage call, it internally calls url generation method
+      # and the request generation message.
+      def execute(verb, path, query = {}, headers = {}, payload = nil)
+        url = generate_request_uri(path, query)
+        request = generate_request(verb, url, headers, payload)
+        request.execute()
+      end
     end
   end
 end
