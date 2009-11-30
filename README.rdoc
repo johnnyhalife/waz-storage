@@ -16,10 +16,10 @@ Well, this is a sum up of the whole experience of writing those gems and getting
 end user experience. Although there're some breaking changes, it's pretty backward compatible with existing gems.
 
 === What's new on the 0.5.6 version?
-- Added signature support for 2009-09-19 Version of the Storage API
-- Queues API has been migrated to the 2009-09-19 Version of the Storage API
-- Added a new parameter for listing queues with metadata
-- Added support for DequeueCount on messages being retrieved from the Queue
+- Added new shared key authentication support for 2009-09-19 Version of the Storage API
+- Queues API has been migrated to the <b>2009-09-19 Version of the Storage API</b>
+- Added a new parameter for <b>listing queues with metadata</b>
+- Added support for <b>DequeueCount</b> on messages being retrieved from the Queue
 - <b>Known Issue</b>: Creating a queue multiple times with same metadata throws 409.
 
 == Getting started
