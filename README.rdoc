@@ -20,7 +20,7 @@ end user experience. Although there're some breaking changes, it's pretty backwa
 - Queues API has been migrated to the 2009-09-19 Version of the Storage API
 - Added a new parameter for listing queues with metadata
 - Added support for DequeueCount on messages being retrieved from the Queue
-- <strong>Known Issue</strong>: Creating a queue multiple times with same metadata throws 409.
+- <b>Known Issue</b>: Creating a queue multiple times with same metadata throws 409.
 
 == Getting started
 	sudo gem install waz-storage --source http://gemcutter.org
