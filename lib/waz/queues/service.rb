@@ -40,7 +40,7 @@ module WAZ
       
       # Deletes the given queue from the current storage account.
       def delete_queue(queue_name)
-        execute :delete, queue_name, nil, :x_ms_version => '2009-09-19'
+        execute(:delete, queue_name, {}, {:x_ms_version => '2009-09-19'})
       end
       
       # Gets the given queue metadata.
@@ -103,7 +103,7 @@ module WAZ
       
       # Marks every message on the given queue for deletion.
       def clear_queue(queue_name)
-        execute :delete, "#{queue_name}/messages", :x_ms_version => '2009-09-19'
+        execute :delete, "#{queue_name}/messages", {}, :x_ms_version => '2009-09-19'
       end
     end
   end

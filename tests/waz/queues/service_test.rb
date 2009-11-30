@@ -79,7 +79,7 @@ describe "Windows Azure Queues API service" do
     service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     # setup mocha expectations
     service.expects(:generate_request_uri).with("mock-queue", {}).returns(expected_url)
-    service.expects(:generate_request).with(:delete, expected_url, {}, nil).returns(mock_request)
+    service.expects(:generate_request).with(:delete, expected_url, {:x_ms_version => '2009-09-19'}, nil).returns(mock_request)
     service.delete_queue('mock-queue')
   end
   
@@ -93,7 +93,7 @@ describe "Windows Azure Queues API service" do
     service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     # setup mocha expectations
     service.expects(:generate_request_uri).with("mock-queue", {:comp => 'metadata'}).returns(expected_url)
-    service.expects(:generate_request).with(:head, expected_url, {}, nil).returns(mock_request)
+    service.expects(:generate_request).with(:head, expected_url, {:x_ms_version => '2009-09-19'}, nil).returns(mock_request)
     service.get_queue_metadata('mock-queue').should == mock_response.headers
   end
   
@@ -105,7 +105,7 @@ describe "Windows Azure Queues API service" do
     service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     # setup mocha expectations
     service.expects(:generate_request_uri).with("mock-queue", :comp => 'metadata').returns(expected_url)
-    service.expects(:generate_request).with(:put, expected_url, {:x_ms_meta_priority => "high-importance"}, nil).returns(mock_request)
+    service.expects(:generate_request).with(:put, expected_url, {:x_ms_version => '2009-09-19', :x_ms_meta_priority => "high-importance"}, nil).returns(mock_request)
 
     service.set_queue_metadata("mock-queue", {:x_ms_meta_priority => "high-importance"})
   end
@@ -272,7 +272,7 @@ describe "Windows Azure Queues API service" do
     service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     # setup mocha expectations
     service.expects(:generate_request_uri).with("mock-queue/messages/message_id", { :pop_receipt => "pop_receipt" }).returns(expected_url)
-    service.expects(:generate_request).with(:delete, expected_url, {}, nil).returns(mock_request)
+    service.expects(:generate_request).with(:delete, expected_url, {:x_ms_version => '2009-09-19'}, nil).returns(mock_request)
 
     service.delete_message("mock-queue", "message_id", "pop_receipt")
   end
@@ -285,7 +285,7 @@ describe "Windows Azure Queues API service" do
     service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     # setup mocha expectations
     service.expects(:generate_request_uri).with("mock-queue/messages", {}).returns(expected_url)
-    service.expects(:generate_request).with(:delete, expected_url, {}, nil).returns(mock_request)
+    service.expects(:generate_request).with(:delete, expected_url, {:x_ms_version => '2009-09-19'}, nil).returns(mock_request)
 
     service.clear_queue("mock-queue")
   end
