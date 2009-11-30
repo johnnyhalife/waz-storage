@@ -37,16 +37,9 @@ describe "queues service behavior" do
     
     while(queue.size > 0) do
       # Since WAZ implements the peek lock pattern we are locking messages (not dequeuing)
-      messages = nil
-      messages = queue.lock(2)
-      messages.size.should == 1
-      
-      puts "dequeued message: #{messages.size}"
-
-      messages.each do |m| 
-        m.dequeue_count.should == 1
-        m.destroy!
-      end
+      message = queue.lock
+      message.dequeue_count.should == 1
+      message.destroy!
     end
     
     queue.size.should == 0

@@ -98,7 +98,7 @@ module WAZ
       # Deletes the given message from the queue, correlating the operation with the pop_receipt
       # in order to avoid eventually inconsistent scenarios.
       def delete_message(queue_name, message_id, pop_receipt)
-        execute :delete, "#{queue_name}/messages/#{message_id}", { :pop_receipt => pop_receipt }, :x_ms_version => '2009-09-19'
+        execute :delete, "#{queue_name}/messages/#{message_id}", { :pop_receipt => pop_receipt }
       end
       
       # Marks every message on the given queue for deletion.

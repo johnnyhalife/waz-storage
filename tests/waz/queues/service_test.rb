@@ -272,7 +272,7 @@ describe "Windows Azure Queues API service" do
     service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     # setup mocha expectations
     service.expects(:generate_request_uri).with("mock-queue/messages/message_id", { :pop_receipt => "pop_receipt" }).returns(expected_url)
-    service.expects(:generate_request).with(:delete, expected_url, {:x_ms_version => '2009-09-19'}, nil).returns(mock_request)
+    service.expects(:generate_request).with(:delete, expected_url, {}, nil).returns(mock_request)
 
     service.delete_message("mock-queue", "message_id", "pop_receipt")
   end
