@@ -96,7 +96,7 @@ module WAZ
       # by enabling the API to point to the appropiated resource.
       def path
         url.gsub(/https?:\/\/[^\/]+\//i, '').scan(/([^&]+)/i).first().first()
-      end
+      end      
     end
   end
 end

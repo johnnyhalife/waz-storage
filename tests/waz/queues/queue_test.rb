@@ -169,4 +169,10 @@ describe "Queue object behavior" do
     queue = WAZ::Queues::Queue.find('queue1') 
     queue.clear()
   end
+  
+  it "should list queues including metadata when requested" do
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
+    WAZ::Queues::Service.any_instance.expects(:list_queues).with({:include => 'metadata'}).returns({}).once
+    queue = WAZ::Queues::Queue.list(true) 
+  end
 end

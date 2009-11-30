@@ -1,8 +1,19 @@
 = Revision History for Windows Azure Storage for Ruby
 
+=== v0.5.6 -  (Johnny Halife)
+- Added signature support for 2009-09-19 Version of the Storage API
+- Queues API has been migrated to the 2009-09-19 Version of the Storage API
+- Added a new parameter for listing queues with metadata
+- Added support for DequeueCount on messages being retrieved from the Queue
+- <strong>Known Issue</strong>: Creating a queue multiple times with same metadata throws 409.
+
 === v0.5.5 -  (Johnny Halife)
 - Added a Change Log
-- Added support for copy-blob [WAZ::Blobs::BlobObject.copy("container/blobname")]
+- Added support for copy-blob [WAZ::Blobs::BlobObject.copy("container/blob_name")]
+- Refactored out the whole request logic to an _execute_ method on the SharedKeyCoreService
+# WIP
+- Added transparent support for block management (users don't know if their blob is being uploaded chunked or not)
+- Added support for a blob to list its blocks
 
 === v0.5.4 - Sat Oct 17 19:35:48 2009 -0300 (Johnny Halife)
 - Fixed method name for String.start_with? (previously starts_with?)

@@ -83,8 +83,8 @@ module WAZ
       end
       
       # Retrieves a blob (content + headers) from the current path.
-      def get_blob(path)
-        execute :get, path 
+      def get_blob(path, options = {})
+        execute :get, path, options
       end
 
       # Deletes the blob existing on the current path.
@@ -93,8 +93,8 @@ module WAZ
       end
             
       # Retrieves the properties associated with the blob at the given path.
-      def get_blob_properties(path)
-        execute(:head, path).headers
+      def get_blob_properties(path, options = {})
+        execute(:head, path, options).headers
       end
 
       # Sets the properties (metadata) associated to the blob at given path.
@@ -105,6 +105,25 @@ module WAZ
       # Copies a blob within the same account (not necessarily to the same container)
       def copy_blob(source_path, dest_path)
         execute :put, dest_path, nil, { :x_ms_version => "2009-04-14", :x_ms_copy_source => canonicalize_message(source_path) }
+      end
+      
+      # Adds a block to the block list of the given blob
+      def put_block(path, identifier, payload)
+        execute :put, path, { :comp => 'block', :blockid => identifier }, {'Content-Type' => "application/octet-stream"}, payload
+      end
+      
+      # Retrieves the list of blocks associated with a single blob. The list is filtered (or not) by type of blob
+      def list_blocks(path, block_list_type = 'all')
+        raise WAZ::Storage::InvalidParameterValue , {:name => :bloclisttype, :values => ['all', 'uncommitted', 'committed']} unless (block_list_type or "") =~ /all|committed|uncommitted/i
+        content = execute(:get, path, {:comp => 'blocklist'}.merge(:blocklisttype => block_list_type.downcase), { :x_ms_version => "2009-04-14" })
+        doc = REXML::Document.new(content)
+        blocks = []
+        REXML::XPath.each(doc, '//Block/') do |item|
+          blocks << { :name => REXML::XPath.first(item, "Name").text,
+                      :size => REXML::XPath.first(item, "Size").text,
+                      :committed => item.parent.name == "CommittedBlocks" }
+        end
+        return blocks
       end
     end
   end

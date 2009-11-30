@@ -20,7 +20,7 @@ describe "Windows Azure Queues API service" do
                       <EnumerationResults AccountName="http://myaccount.queue.core.windows.net">
                         <Queues>
                           <Queue>
-                            <QueueName>mock-queue</QueueName>
+                            <Name>mock-queue</Name>
                             <Url>http://myaccount.queue.core.windows.net/mock-queue</Url>
                           </Queue>
                         </Queues>
@@ -33,7 +33,7 @@ describe "Windows Azure Queues API service" do
     service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     # setup mocha expectations
     service.expects(:generate_request_uri).with(nil, :comp => 'list').returns(expected_url)
-    service.expects(:generate_request).with(:get, expected_url, {}, nil).returns(mock_request)
+    service.expects(:generate_request).with(:get, expected_url, {:x_ms_version => '2009-09-19'}, nil).returns(mock_request)
 
     queues = service.list_queues()
     queues.first()[:name].should == "mock-queue"
@@ -48,7 +48,7 @@ describe "Windows Azure Queues API service" do
     service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     # setup mocha expectations
     service.expects(:generate_request_uri).with("mock-queue", nil).returns(expected_url)
-    service.expects(:generate_request).with(:put, expected_url, {:x_ms_meta_priority => "high-importance"}, nil).returns(mock_request)
+    service.expects(:generate_request).with(:put, expected_url, {:x_ms_meta_priority => "high-importance", :x_ms_version => '2009-09-19'}, nil).returns(mock_request)
 
     service.create_queue("mock-queue", {:x_ms_meta_priority => "high-importance"})
   end
@@ -65,7 +65,7 @@ describe "Windows Azure Queues API service" do
     service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     # setup mocha expectations
     service.expects(:generate_request_uri).with("mock-queue", nil).returns(expected_url)
-    service.expects(:generate_request).with(:put, expected_url, {}, nil).returns(mock_request)
+    service.expects(:generate_request).with(:put, expected_url, {:x_ms_version => '2009-09-19'}, nil).returns(mock_request)
 
     lambda{ service.create_queue("mock-queue") }.should raise_error(WAZ::Queues::QueueAlreadyExists)
   end
@@ -119,7 +119,7 @@ describe "Windows Azure Queues API service" do
     # setup mocha expectations
     payload = "<?xml version=\"1.0\" encoding=\"utf-8\"?><QueueMessage><MessageText>this is the message payload</MessageText></QueueMessage>"                       
     service.expects(:generate_request_uri).with("mock-queue/messages", { :messagettl => 604800 }).returns(expected_url)
-    service.expects(:generate_request).with(:post, expected_url, { 'Content-Type' => "application/xml" }, payload).returns(mock_request)
+    service.expects(:generate_request).with(:post, expected_url, { 'Content-Type' => "application/xml", :x_ms_version => '2009-09-19'}, payload).returns(mock_request)
 
     service.enqueue("mock-queue", "this is the message payload")
   end
@@ -146,7 +146,7 @@ describe "Windows Azure Queues API service" do
     
     # setup mocha expectations
     service.expects(:generate_request_uri).with("mock-queue/messages", {}).returns(expected_url)
-    service.expects(:generate_request).with(:get, expected_url, {}, nil).returns(mock_request)
+    service.expects(:generate_request).with(:get, expected_url, {:x_ms_version => "2009-09-19"}, nil).returns(mock_request)
 
     messages = service.get_messages("mock-queue")
     messages.first()[:message_id].should == "message_id"
@@ -179,7 +179,7 @@ describe "Windows Azure Queues API service" do
     
     # setup mocha expectations
     service.expects(:generate_request_uri).with("mock-queue/messages", {:num_of_messages => 2, :visibility_timeout => 3}).returns(expected_url)
-    service.expects(:generate_request).with(:get, expected_url, {}, nil).returns(mock_request)
+    service.expects(:generate_request).with(:get, expected_url, {:x_ms_version => "2009-09-19"}, nil).returns(mock_request)
 
     messages = service.get_messages("mock-queue", :num_of_messages => 2, :visibility_timeout => 3)
     messages.first()[:message_id].should == "message_id"
@@ -212,6 +212,7 @@ describe "Windows Azure Queues API service" do
                               <InsertionTime>Mon, 22 Sep 2008 23:29:20 GMT</InsertionTime>
                               <ExpirationTime>Mon, 29 Sep 2008 23:29:20 GMT</ExpirationTime>
                               <MessageText>text</MessageText>
+                              <DequeueCount>5</DequeueCount>
                             </QueueMessage>
                           </QueueMessagesList>
                         eos
@@ -222,13 +223,14 @@ describe "Windows Azure Queues API service" do
     
     # setup mocha expectations
     service.expects(:generate_request_uri).with("mock-queue/messages", {:peek_only => true}).returns(expected_url)
-    service.expects(:generate_request).with(:get, expected_url, {}, nil).returns(mock_request)
+    service.expects(:generate_request).with(:get, expected_url, {:x_ms_version => "2009-09-19"}, nil).returns(mock_request)
 
     messages = service.peek("mock-queue")
     messages.first()[:message_id].should == "message_id"
     messages.first()[:message_text].should == "text"
     messages.first()[:insertion_time].nil?.should == false
     messages.first()[:expiration_time].nil?.should == false
+    messages.first()[:dequeue_count].should == 5
   end
   
   it "should peek messages from queue when :num_of_messages is specified" do
@@ -241,6 +243,7 @@ describe "Windows Azure Queues API service" do
                               <InsertionTime>Mon, 22 Sep 2008 23:29:20 GMT</InsertionTime>
                               <ExpirationTime>Mon, 29 Sep 2008 23:29:20 GMT</ExpirationTime>
                               <MessageText>text</MessageText>
+                              <DequeueCount>5</DequeueCount>
                             </QueueMessage>
                           </QueueMessagesList>
                         eos
@@ -251,13 +254,14 @@ describe "Windows Azure Queues API service" do
     
     # setup mocha expectations
     service.expects(:generate_request_uri).with("mock-queue/messages", {:peek_only => true, :num_of_messages => 32}).returns(expected_url)
-    service.expects(:generate_request).with(:get, expected_url, {}, nil).returns(mock_request)
+    service.expects(:generate_request).with(:get, expected_url, {:x_ms_version => "2009-09-19"}, nil).returns(mock_request)
 
     messages = service.peek("mock-queue", {:num_of_messages => 32})
     messages.first()[:message_id].should == "message_id"
     messages.first()[:message_text].should == "text"
     messages.first()[:insertion_time].nil?.should == false
     messages.first()[:expiration_time].nil?.should == false
+    messages.first()[:dequeue_count].should == 5
   end
   
   it "should delete message" do
@@ -284,5 +288,37 @@ describe "Windows Azure Queues API service" do
     service.expects(:generate_request).with(:delete, expected_url, {}, nil).returns(mock_request)
 
     service.clear_queue("mock-queue")
+  end
+  
+  it "should list queues with metadata" do
+    # setup mocks
+    expected_url = "http://my_account.queue.core.windows.net/?comp=list&include=metadata"
+    expected_response = <<-eos
+                      <?xml version="1.0" encoding="utf-8"?>
+                      <EnumerationResults AccountName="http://myaccount.queue.core.windows.net">
+                        <Queues>
+                          <Queue>
+                            <Name>mock-queue</Name>
+                            <Url>http://myaccount.queue.core.windows.net/mock-queue</Url>
+                            <Metadata>
+                              <x-ms-name>Custom Queue</x-ms-name>
+                            </Metadata>
+                          </Queue>
+                        </Queues>
+                      </EnumerationResults>
+                      eos
+
+    mock_request = RestClient::Request.new(:method => :get, :url => expected_url)
+    mock_request.expects(:execute).returns(expected_response)
+
+    service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
+    # setup mocha expectations
+    service.expects(:generate_request_uri).with(nil, {:comp => 'list', :include => 'metadata'}).returns(expected_url)
+    service.expects(:generate_request).with(:get, expected_url, {:x_ms_version => '2009-09-19'}, nil).returns(mock_request)
+
+    queues = service.list_queues({:include => 'metadata'})
+    queues.first()[:name].should == "mock-queue"
+    queues.first()[:url].should == "http://myaccount.queue.core.windows.net/mock-queue"
+    queues.first()[:metadata][:x_ms_name] = 'Custom Queue'
   end
 end

@@ -119,4 +119,10 @@ describe "storage service core behavior" do
     request.headers["Content-Length"].should == 0
     request.headers["Authorization"] = "SharedKey mock-account:a_mock_signature"
   end
+  
+  it "should cannonicalize message by appending account_name to the request path following 2009-09-19 version of the API" do
+    service = WAZ::Queues::Service.new(:account_name => "myaccount", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
+    canonical_message = service.canonicalize_message20090919("http://myaccount.blob.core.windows.net/mycontainer?restype=container&comp=metadata")
+    canonical_message.should == "/myaccount/mycontainer\ncomp:metadata\nrestype:container"
+  end
 end

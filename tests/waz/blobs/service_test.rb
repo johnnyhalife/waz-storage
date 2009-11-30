@@ -173,4 +173,88 @@ describe "blobs service behavior" do
     service.expects(:generate_request).with(:put, "mock-uri", {:x_ms_version => "2009-04-14", :x_ms_copy_source => "/mock-account/container/blob"}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
     service.copy_blob("container/blob", "container/blob-copy")
   end
+  
+  it "should put block" do
+    service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
+    RestClient::Request.any_instance.expects(:execute).returns(nil)
+    service.expects(:generate_request_uri).with("container/blob", { :blockid => 'block_id', :comp => 'block'}).returns("mock-uri")
+    service.expects(:generate_request).with(:put, "mock-uri", {'Content-Type' => 'application/octet-stream'}, "payload").returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
+    service.put_block("container/blob", "block_id", "payload")
+  end 
+  
+  it "should list blocks" do
+    response = <<-eos
+                <?xml version="1.0" encoding="utf-8"?>
+                <BlockList>
+                  <CommittedBlocks>
+                    <Block>
+                      <Name>AAAAAA==</Name>
+                      <Size>1048576</Size>
+                    </Block>
+                  </CommittedBlocks>
+                  <UncommittedBlocks>
+                    <Block>
+                      <Name>AQAAAA==</Name>
+                      <Size>1048576</Size>
+                    </Block>
+                    <Block>
+                      <Name>AgAAAA==</Name>
+                      <Size>402848</Size>
+                    </Block>
+                  </UncommittedBlocks>
+                </BlockList>
+                eos
+    service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
+    RestClient::Request.any_instance.expects(:execute).returns(response)
+    service.expects(:generate_request_uri).with('container/blob', {:comp => 'blocklist', :blocklisttype => 'all'}).returns("mock-uri")
+    service.expects(:generate_request).with(:get, "mock-uri", {:x_ms_version => "2009-04-14"}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
+    blocks = service.list_blocks('container/blob')
+    blocks.first[:name].should == "AAAAAA=="
+    blocks.first[:size].should == "1048576"
+    blocks.first[:committed].should == true
+    blocks.last[:name].should == "AgAAAA=="
+    blocks.last[:size].should == "402848"
+    blocks.last[:committed].should == false
+  end
+  
+  it "should list with additional parameters" do
+    response = <<-eos
+                <?xml version="1.0" encoding="utf-8"?>
+                <BlockList>
+                  <CommittedBlocks>
+                    <Block>
+                      <Name>AAAAAA==</Name>
+                      <Size>1048576</Size>
+                    </Block>
+                  </CommittedBlocks>
+                  <UncommittedBlocks>
+                    <Block>
+                      <Name>AQAAAA==</Name>
+                      <Size>1048576</Size>
+                    </Block>
+                    <Block>
+                      <Name>AgAAAA==</Name>
+                      <Size>402848</Size>
+                    </Block>
+                  </UncommittedBlocks>
+                </BlockList>
+                eos
+    service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
+    RestClient::Request.any_instance.expects(:execute).returns(response)
+    service.expects(:generate_request_uri).with('container/blob', {:comp => 'blocklist', :blocklisttype => 'committed'}).returns("mock-uri")
+    service.expects(:generate_request).with(:get, "mock-uri", {:x_ms_version => "2009-04-14"}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
+    blocks = service.list_blocks('container/blob', 'COMMITTED')
+    blocks.first[:name].should == "AAAAAA=="
+    blocks.first[:size].should == "1048576"
+    blocks.first[:committed].should == true
+    blocks.last[:name].should == "AgAAAA=="
+    blocks.last[:size].should == "402848"
+    blocks.last[:committed].should == false
+  end
+  
+  it "should throw when block list type is nil or doesn't fall into the valid values" do
+    service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
+    lambda { service.list_blocks('container/blob', 'whatever') }.should raise_error(WAZ::Storage::InvalidParameterValue)
+    lambda { service.list_blocks('container/blob', nil) }.should raise_error(WAZ::Storage::InvalidParameterValue)    
+  end
 end

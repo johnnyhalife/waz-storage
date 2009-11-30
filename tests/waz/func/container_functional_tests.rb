@@ -32,7 +32,7 @@ describe "blobs service behavior" do
       blob.metadata[:x_ms_meta_owner].should == "Other owner"
     
       blob.value.should == "Hola Don Julio Morito y Jedib!"
-    
+      
       container.blobs.each do |blob|
           puts "#{blob.path}<br/>"
       end

@@ -56,16 +56,46 @@ module WAZ
       # the canonicalized header line and the canonical form of the message, all of the joined by \n character. Encoded with 
       # Base64 and encrypted with SHA256 using the access_key as the seed.
       def generate_signature(request)
-         signature = request.method.to_s.upcase + "\x0A" +
+        return generate_signature20090919(request) if request.headers["x-ms-version"] == "2009-09-19"
+        signature = request.method.to_s.upcase + "\x0A" +
                      (request.headers["Content-MD5"] or "") + "\x0A" +
                      (request.headers["Content-Type"] or "") + "\x0A" +
                      (request.headers["Date"] or "")+ "\x0A" +
                      canonicalize_headers(request.headers) + "\x0A" +
                      canonicalize_message(request.url)
                      
-         return Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature.toutf8).digest)
+        return Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature.toutf8).digest)
       end
       
+      
+      def generate_signature20090919(request)
+        signature = request.method.to_s.upcase + "\x0A" +
+                    (request.headers["Content-Encoding"] or "") + "\x0A" +
+                    (request.headers["Content-Language"] or "") + "\x0A" +
+                    (request.headers["Content-Length"] or "").to_s + "\x0A" +                    
+                    (request.headers["Content-MD5"] or "") + "\x0A" +
+                    (request.headers["Content-Type"] or "") + "\x0A" +
+                    (request.headers["Date"] or "")+ "\x0A" +
+                    (request.headers["If-Modified-Since"] or "")+ "\x0A" +
+                    (request.headers["If-Match"] or "")+ "\x0A" +
+                    (request.headers["If-None-Match"] or "")+ "\x0A" +                    
+                    (request.headers["If-Unmodified-Since"] or "")+ "\x0A" +
+                    (request.headers["Range"] or "")+ "\x0A" +                    
+                    canonicalize_headers(request.headers) + "\x0A" +
+                    canonicalize_message20090919(request.url)
+                            
+        return Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature.toutf8).digest)        
+      end
+      
+      def canonicalize_message20090919(url)
+        uri_component = url.gsub(/https?:\/\/[^\/]+\//i, '').gsub(/\?.*/i, '')
+        query_component = (url.scan(/\?(.*)/i).first() or []).first()
+        query_component = query_component.downcase.split('&').sort{|a, b| a <=> b}.map{ |p| p.split('=').join(':') }.join("\n") if query_component
+        canonicalized_message = "/#{self.account_name}/#{uri_component}"
+        canonicalized_message << "\n#{query_component}" if query_component
+        return canonicalized_message
+      end
+        
       # Generates a Windows Azure Storage call, it internally calls url generation method
       # and the request generation message.
       def execute(verb, path, query = {}, headers = {}, payload = nil)

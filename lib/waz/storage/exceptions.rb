@@ -21,5 +21,13 @@ module WAZ
         super("You should establish connection before using the services, the connection configuration is required.")
       end
     end
+    
+    # This exception if raised when the value given for an argument doesn't fall into the permitted values. For example
+    # if values on the blocklisttype aren't [all|uncommitted|committed]
+    class InvalidParameterValue < StorageException
+      def initialize(args = {})
+        super("The value supplied for the parameter #{args[:name]} is invalid. Permitted values are #{args[:values].join(',')}")
+      end
+    end
   end
 end

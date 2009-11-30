@@ -42,8 +42,11 @@ module WAZ
       class << self
         # Returns an array of the queues (WAZ::Queues::Queue) existing on the current 
         # Windows Azure Storage account.
-        def list
-          service_instance.list_queues.map do |queue|
+        # 
+        # include_metadata defines if the metadata is retrieved along with queue data.
+        def list(include_metadata = false)
+          options = include_metadata ? { :include => 'metadata' } : {}
+          service_instance.list_queues(options).map do |queue|
             WAZ::Queues::Queue.new(queue)
           end
         end
@@ -60,8 +63,8 @@ module WAZ
         # return nil shilding the user from a ResourceNotFound exception.
         def find(queue_name)
           begin 
-            service_instance.get_queue_metadata(queue_name)
-            WAZ::Queues::Queue.new(:name => queue_name, :url => service_instance.generate_request_uri(queue_name))
+            metadata = service_instance.get_queue_metadata(queue_name)
+            WAZ::Queues::Queue.new(:name => queue_name, :url => service_instance.generate_request_uri(queue_name), :metadata => metadata)
           rescue RestClient::ResourceNotFound
             return nil
           end
@@ -76,13 +79,14 @@ module WAZ
         end
       end
       
-      attr_accessor :name, :url
+      attr_accessor :name, :url, :metadata
 
       def initialize(options = {})
         raise WAZ::Storage::InvalidOption, :name unless options.keys.include?(:name)
         raise WAZ::Storage::InvalidOption, :url unless options.keys.include?(:url)
         self.name = options[:name]
         self.url = options[:url]
+        self.metadata = options[:metadata]
       end
       
       # Deletes the queue from the current storage account.
@@ -92,7 +96,7 @@ module WAZ
       
       # Retrieves the metadata headers associated with the quere.
       def metadata
-        self.class.service_instance.get_queue_metadata(self.name)
+        metadata ||= self.class.service_instance.get_queue_metadata(self.name)
       end
       
       # Sets the metadata given on the new_metadata, when overwrite passed different 

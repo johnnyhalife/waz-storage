@@ -33,7 +33,7 @@ module WAZ
         end
       end
       
-      attr_accessor :message_id, :message_text, :pop_receipt, :expiration_time, :insertion_time, :time_next_visible
+      attr_accessor :message_id, :message_text, :pop_receipt, :expiration_time, :insertion_time, :time_next_visible, :dequeue_count
        
       # Creates an instance of Message class, this method is intended to be used internally from the 
       # Queue.
@@ -44,6 +44,7 @@ module WAZ
         self.expiration_time = params[:expiration_time]
         self.insertion_time = params[:insertion_time]
         self.time_next_visible = params[:time_next_visible]
+        self.dequeue_count = params[:dequeue_count]
         @queue_name = params[:queue_name]
       end
       
