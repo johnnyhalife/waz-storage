@@ -37,6 +37,16 @@ describe "storage service core behavior" do
     service.generate_request_uri("/queue", {:prefix => "p", :other => "other"}).should == "https://mock-account.queue.localhost/queue?other=other&prefix=p"
   end
   
+  it "should include additional parameters when given althought when there is no comp" do
+    service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
+    service.generate_request_uri("/queue", {:comp => "metadata", :messagettl => 650}).should == "https://mock-account.queue.localhost/queue?comp=metadata&messagettl=650"
+  end
+  
+  it "should include additional parameters when given althought when there is no comp" do
+    service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
+    service.generate_request_uri("/queue", {:item => "%"}).should == "https://mock-account.queue.localhost/queue?item=%25"
+  end
+  
   it "should canonicalize headers (order lexicographical, trim values, and join by NEW_LINES)" do
     service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     headers = { "Content-Type" => "application/xml",
