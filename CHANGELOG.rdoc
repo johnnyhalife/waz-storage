@@ -1,4 +1,6 @@
 = Revision History for Windows Azure Storage for Ruby
+=== v0.5.7 - (Johnny Halife)
+- Fixes a critical bug on URL management that some time prevents message from being deleted, caused by a missing encoding on the URL 	parameters.
 
 === v0.5.6 -  (Johnny Halife)
 - Added signature support for 2009-09-19 Version of the Storage API
