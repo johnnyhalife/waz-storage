@@ -128,7 +128,7 @@ describe "blobs service behavior" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute).returns(nil)
     service.expects(:generate_request_uri).with("container/blob", nil).returns("mock-uri")
-    service.expects(:generate_request).with(:put, "mock-uri", {'Content-Type' => 'application/octet-stream'}, "payload").returns(RestClient::Request.new(:method => :put, :url => "http://localhost"))
+    service.expects(:generate_request).with(:put, "mock-uri", {'Content-Type' => 'application/octet-stream', :x_ms_version => "2009-09-19", :x_ms_blob_type => "BlockBlob"}, "payload").returns(RestClient::Request.new(:method => :put, :url => "http://localhost"))
     service.put_blob("container/blob", "payload")
   end
   
@@ -136,15 +136,15 @@ describe "blobs service behavior" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute).returns("payload")
     service.expects(:generate_request_uri).with("container/blob", {}).returns("mock-uri")
-    service.expects(:generate_request).with(:get, "mock-uri", {}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
+    service.expects(:generate_request).with(:get, "mock-uri", {:x_ms_version => "2009-09-19"}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
     service.get_blob("container/blob").should == "payload"
   end
   
   it "should delete blob" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute).returns(nil)
-    service.expects(:generate_request_uri).with("container/blob", {}).returns("mock-uri")
-    service.expects(:generate_request).with(:delete, "mock-uri", {}, nil).returns(RestClient::Request.new(:method => :put, :url => "http://localhost"))
+    service.expects(:generate_request_uri).with("container/blob", nil).returns("mock-uri")
+    service.expects(:generate_request).with(:delete, "mock-uri", {:x_ms_version => "2009-09-19"}, nil).returns(RestClient::Request.new(:method => :put, :url => "http://localhost"))
     service.delete_blob("container/blob")
   end
   
@@ -170,7 +170,7 @@ describe "blobs service behavior" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute).returns(nil)
     service.expects(:generate_request_uri).with("container/blob-copy", nil).returns("mock-uri")
-    service.expects(:generate_request).with(:put, "mock-uri", {:x_ms_version => "2009-04-14", :x_ms_copy_source => "/mock-account/container/blob"}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
+    service.expects(:generate_request).with(:put, "mock-uri", {:x_ms_version => "2009-09-19", :x_ms_copy_source => "/mock-account/container/blob"}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
     service.copy_blob("container/blob", "container/blob-copy")
   end
   
@@ -256,5 +256,18 @@ describe "blobs service behavior" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     lambda { service.list_blocks('container/blob', 'whatever') }.should raise_error(WAZ::Storage::InvalidParameterValue)
     lambda { service.list_blocks('container/blob', nil) }.should raise_error(WAZ::Storage::InvalidParameterValue)    
+  end
+  
+  it "should take blob snapshots" do
+    service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
+    
+    mock_response = mock()
+    mock_response.stubs(:headers).returns({:x_ms_snapshot => Time.new.httpdate})
+    mock_request = mock()
+    mock_request.stubs(:execute).returns(mock_response)
+    
+    service.expects(:generate_request_uri).with("container/blob", {:comp => "snapshot"}).returns("container/blob")
+    service.expects(:generate_request).with(:put, "container/blob", {:x_ms_version => "2009-09-19"}, nil).returns(mock_request)
+    service.snapshot_blob("container/blob").should == mock_response.headers[:x_ms_snapshot]
   end
 end

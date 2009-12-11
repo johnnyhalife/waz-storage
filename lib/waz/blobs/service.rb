@@ -60,7 +60,7 @@ module WAZ
 
       # Lists all the blobs inside the given container.
       def list_blobs(container_name)
-        content = execute(:get, container_name, { :comp => 'list' })
+        content = execute(:get, container_name, { :comp => 'list'})
         doc = REXML::Document.new(content)
         containers = []
         REXML::XPath.each(doc, '//Blob/') do |item|
@@ -79,17 +79,18 @@ module WAZ
       #
       # metadata is a hash that stores all the properties that you want to add to the blob when creating it.
       def put_blob(path, payload, content_type = "application/octet-stream", metadata = {})
-        execute :put, path, nil, metadata.merge("Content-Type" => content_type), payload
+        default_headers = {"Content-Type" => content_type, :x_ms_version => "2009-09-19", :x_ms_blob_type => "BlockBlob"}
+        execute :put, path, nil, metadata.merge(default_headers), payload
       end
       
       # Retrieves a blob (content + headers) from the current path.
       def get_blob(path, options = {})
-        execute :get, path, options
+        execute :get, path, options, {:x_ms_version => "2009-09-19"}
       end
 
       # Deletes the blob existing on the current path.
       def delete_blob(path)
-        execute :delete, path
+        execute :delete, path, nil, {:x_ms_version => "2009-09-19"}
       end
             
       # Retrieves the properties associated with the blob at the given path.
@@ -104,7 +105,7 @@ module WAZ
       
       # Copies a blob within the same account (not necessarily to the same container)
       def copy_blob(source_path, dest_path)
-        execute :put, dest_path, nil, { :x_ms_version => "2009-04-14", :x_ms_copy_source => canonicalize_message(source_path) }
+        execute :put, dest_path, nil, { :x_ms_version => "2009-09-19", :x_ms_copy_source => canonicalize_message(source_path) }
       end
       
       # Adds a block to the block list of the given blob
@@ -114,7 +115,7 @@ module WAZ
       
       # Retrieves the list of blocks associated with a single blob. The list is filtered (or not) by type of blob
       def list_blocks(path, block_list_type = 'all')
-        raise WAZ::Storage::InvalidParameterValue , {:name => :bloclisttype, :values => ['all', 'uncommitted', 'committed']} unless (block_list_type or "") =~ /all|committed|uncommitted/i
+        raise WAZ::Storage::InvalidParameterValue , {:name => :blocklisttype, :values => ['all', 'uncommitted', 'committed']} unless (block_list_type or "") =~ /all|committed|uncommitted/i
         content = execute(:get, path, {:comp => 'blocklist'}.merge(:blocklisttype => block_list_type.downcase), { :x_ms_version => "2009-04-14" })
         doc = REXML::Document.new(content)
         blocks = []
@@ -124,6 +125,11 @@ module WAZ
                       :committed => item.parent.name == "CommittedBlocks" }
         end
         return blocks
+      end
+      
+      # Creates a read-only snapshot of a blob as it looked like in time.
+      def snapshot_blob(path)
+        execute(:put, path, { :comp => 'snapshot' }, {:x_ms_version => "2009-09-19"}).headers[:x_ms_snapshot]
       end
     end
   end

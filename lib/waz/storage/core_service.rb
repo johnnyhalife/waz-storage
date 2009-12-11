@@ -83,14 +83,14 @@ module WAZ
                     (request.headers["Range"] or "")+ "\x0A" +                    
                     canonicalize_headers(request.headers) + "\x0A" +
                     canonicalize_message20090919(request.url)
-                            
-        return Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature.toutf8).digest)        
+                    
+        Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature.toutf8).digest)        
       end
       
       def canonicalize_message20090919(url)
         uri_component = url.gsub(/https?:\/\/[^\/]+\//i, '').gsub(/\?.*/i, '')
         query_component = (url.scan(/\?(.*)/i).first() or []).first()
-        query_component = query_component.downcase.split('&').sort{|a, b| a <=> b}.map{ |p| p.split('=').join(':') }.join("\n") if query_component
+        query_component = query_component.split('&').sort{|a, b| a <=> b}.map{ |p| p.split('=').join(':') }.join("\n") if query_component
         canonicalized_message = "/#{self.account_name}/#{uri_component}"
         canonicalized_message << "\n#{query_component}" if query_component
         return canonicalized_message

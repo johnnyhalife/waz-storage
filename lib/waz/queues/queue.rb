@@ -7,15 +7,15 @@ module WAZ
     #	WAZ::Queues::Queue.list
     #
     #	# create a queue (here you can also send hashed metadata)
-    #	WAZ::Queues::Queue.create('my-container')
+    #	WAZ::Queues::Queue.create('test-queue')
     #
     #	# get a specific queue
-    #	queue = WAZ::Queues::Container.find('my-container')
+    #	queue = WAZ::Queues::Queue.find('test-queue')
     #
     #	# get queue properties (including default headers)
     #	queue.metadata #=> hash containing beautified metadata (:x_ms_meta_name)
     #
-    #	# set container properties (should follow x-ms-meta to be persisted)
+    #	# set queue properties (should follow x-ms-meta to be persisted)
     #	# if you specify the optional parameter overwrite, existing metadata 
     #	# will be deleted else merged with new one.
     #	queue.put_properties!(:x_ms_meta_MyProperty => "my value")
@@ -55,6 +55,7 @@ module WAZ
         # metadata to be stored on the queue. (Remember that metadata on the storage account must start with 
         # :x_ms_metadata_{yourCustomPropertyName}, if not it will not be persisted).
         def create(queue_name, metadata = {})
+          raise WAZ::Storage::InvalidParameterValue, {:name => "name", :values => ["lower letters, numbers or - (hypen), and must not start or end with - (hyphen)"]} unless WAZ::Storage::ValidationRules.valid_name?(queue_name)
           service_instance.create_queue(queue_name, metadata)
           WAZ::Queues::Queue.new(:name => queue_name, :url => service_instance.generate_request_uri(queue_name))
         end

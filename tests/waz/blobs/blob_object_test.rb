@@ -58,4 +58,28 @@ describe "Windows Azure Blobs interface API" do
     copy = blob.copy('container/blob-copy')
     copy.path.should == "container/blob-copy"
   end
+  
+  it "should take a snapshot of a blob" do
+    mock_time = Time.new 
+    Time.stubs(:new).returns(mock_time)
+    
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my_account", :access_key => "key"})   
+    WAZ::Blobs::BlobObject.service_instance.expects(:get_blob_properties).with('container/blob').returns(:content_type => "plain/text")
+    WAZ::Blobs::BlobObject.service_instance.expects(:snapshot_blob).with('container/blob').returns(mock_time.httpdate)
+    
+    blob = WAZ::Blobs::BlobObject.new(:name => "blob_name", :url => "http://localhost/container/blob", :content_type => "plain/text")  
+    blob_snapshot = blob.snapshot
+    blob_snapshot.snapshot_date.should === mock_time.httpdate
+  end
+  
+  it "should not allow snapshoted blobs to perform write operations" do    
+    snapshot = WAZ::Blobs::BlobObject.new(:name => "blob_name", :url => "http://localhost/container/blob", :content_type => "plain/text", :snapshot_date => Time.new.httpdate)  
+    lambda { snapshot.value = "new-value" }.should raise_error(WAZ::Blobs::InvalidOperation)    
+    lambda { snapshot.put_properties!({:x_ms_meta_name => "foo"}) }.should raise_error(WAZ::Blobs::InvalidOperation)    
+  end
+  
+  it "blob path should include snapshot parameter" do
+    blob = WAZ::Blobs::BlobObject.new(:name => "blob_name", :url => "http://localhost/container/blob?snapshot=foo", :content_type => "application/xml")  
+    blob.path.should == "container/blob?snapshot=foo"
+  end
 end

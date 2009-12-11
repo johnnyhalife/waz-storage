@@ -35,7 +35,7 @@ module WAZ
         end
       end
       
-      attr_accessor :name, :url, :content_type
+      attr_accessor :name, :url, :content_type, :snapshot_date
       
       # Creates a new instance of the Blob object. This constructor is internally used by the Container
       # it's initialized thru a hash that's received as parameter. It has the following requirements:
@@ -48,6 +48,7 @@ module WAZ
         self.name = options[:name]
         self.url = options[:url]
         self.content_type = options[:content_type]
+        self.snapshot_date = options[:snapshot_date]
       end
       
       # Returns the blob properties from Windows Azure. This properties always come as HTTP Headers and they include standard headers like
@@ -65,6 +66,7 @@ module WAZ
       # Assigns the given value to the blob content. It also stores a local copy of it in order to avoid round trips 
       # on scenarios when you do Save and Display on the same context.
       def value=(new_value)
+        raise WAZ::Blobs::InvalidOperation if self.snapshot_date
         self.class.service_instance.put_blob(path, new_value, content_type, metadata)
         @value = new_value
       end
@@ -72,6 +74,7 @@ module WAZ
       # Stores the blob properties. Those properties are sent as HTTP Headers it's really important that you name your custom 
       # properties with the <em>x-ms-meta</em> prefix, if not the won't be persisted by the Windows Azure Blob Storage API.
       def put_properties!(properties = {})
+        raise WAZ::Blobs::InvalidOperation if self.snapshot_date
         self.class.service_instance.set_blob_properties(path, properties)
       end
       
@@ -90,6 +93,16 @@ module WAZ
         return BlobObject.new(:name => destination, 
                               :url => self.class.service_instance.generate_request_uri(destination),
                               :content_type => properties[:content_type])
+      end
+      
+      # Creates and returns a read-only snapshot of a blob as it looked like in time.
+      def snapshot
+        date = self.class.service_instance.snapshot_blob(self.path)
+        properties = self.class.service_instance.get_blob_properties(self.path)
+        return BlobObject.new(:name => self.name, 
+                              :url => self.class.service_instance.generate_request_uri(self.path) + "?snapshot=#{date}",
+                              :content_type => properties[:content_type],
+                              :snapshot_date => date)
       end
       
       # Returns the blob path. This is specially important when simulating containers inside containers

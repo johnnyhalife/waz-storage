@@ -175,4 +175,20 @@ describe "Queue object behavior" do
     WAZ::Queues::Service.any_instance.expects(:list_queues).with({:include => 'metadata'}).returns({}).once
     queue = WAZ::Queues::Queue.list(true) 
   end
+  
+  it "should raise an exception when queue name starts with - (hypen)" do
+    lambda { WAZ::Queues::Queue.create('-queue')  }.should raise_error(WAZ::Storage::InvalidParameterValue)
+  end
+  
+  it "should raise an exception when queue name  ends with - (hypen)" do
+    lambda { WAZ::Queues::Queue.create('queue-')  }.should raise_error(WAZ::Storage::InvalidParameterValue)
+  end
+  
+  it "should raise an exception when queue name is less than 3" do
+    lambda { WAZ::Queues::Queue.create('q')  }.should raise_error(WAZ::Storage::InvalidParameterValue)
+  end
+  
+  it "should raise an exception when queue name is longer than 63" do
+    lambda { WAZ::Queues::Queue.create('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')  }.should raise_error(WAZ::Storage::InvalidParameterValue)
+  end
 end

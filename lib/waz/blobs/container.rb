@@ -41,6 +41,7 @@ module WAZ
       class << self 
         # Creates a new container with the given name.
         def create(name)
+          raise WAZ::Storage::InvalidParameterValue, {:name => "name", :values => ["lower letters, numbers or - (hypen), and must not start or end with - (hyphen)"]} unless WAZ::Storage::ValidationRules.valid_name?(name)
           service_instance.create_container(name)
           return Container.new(:name => name)
         end
