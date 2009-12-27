@@ -56,7 +56,9 @@ module WAZ
       # the canonicalized header line and the canonical form of the message, all of the joined by \n character. Encoded with 
       # Base64 and encrypted with SHA256 using the access_key as the seed.
       def generate_signature(request)
+        return generate_signature_table(request) if request.headers["DataServiceVersion"] == "1.0;NetFx"
         return generate_signature20090919(request) if request.headers["x-ms-version"] == "2009-09-19"
+
         signature = request.method.to_s.upcase + "\x0A" +
                      (request.headers["Content-MD5"] or "") + "\x0A" +
                      (request.headers["Content-Type"] or "") + "\x0A" +
@@ -64,9 +66,18 @@ module WAZ
                      canonicalize_headers(request.headers) + "\x0A" +
                      canonicalize_message(request.url)
                      
-        return Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature.toutf8).digest)
+        Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature.toutf8).digest)
       end
-      
+
+      def generate_signature_table(request)
+        signature = request.method.to_s.upcase + "\x0A" +
+                     (request.headers["Content-MD5"] or "") + "\x0A" +
+                     (request.headers["Content-Type"] or "") + "\x0A" +
+                     (request.headers["Date"] or request.headers["x-ms-Date"] or "")+ "\x0A" +
+                     canonicalize_message(request.url)
+                     
+        Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature.toutf8).digest) 
+      end      
       
       def generate_signature20090919(request)
         signature = request.method.to_s.upcase + "\x0A" +
