@@ -44,7 +44,7 @@ module WAZ
         begin
           content = execute :get, "Tables('#{table_name}')", {}, { 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
           doc = REXML::Document.new(content)
-          item = REXML::XPath.first(doc, "/feed/entry")
+          item = REXML::XPath.first(doc, "entry")
           return {  :name => REXML::XPath.first(item.elements['content'], "m:properties/d:TableName", {"m" => "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata", "d" => "http://schemas.microsoft.com/ado/2007/08/dataservices"}).text,
                     :url => REXML::XPath.first(item, "id").text }
         rescue RestClient::ResourceNotFound

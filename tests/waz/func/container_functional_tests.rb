@@ -63,17 +63,4 @@ describe "blobs service behavior" do
     
     WAZ::Storage::Base.connected?.should == false
   end
-  
-  it "should run" do
-    require 'lib/waz-tables'
-    options = { :account_name => "wazstoragejohnny", 
-                :access_key => "Tm870FVNS14aNW1zsn13fZykc4yDKz82W8m4qujIZTayOJvhOePsjSFIsFnQF8rPnDaRJQJwzhoziI7ZtIWTsQ==" }
-
-    WAZ::Storage::Base.establish_connection(options) do
-      WAZ::Tables::Table.list
-      #30.times{ |i|
-      #  WAZ::Tables::Table.destroy!
-      #}
-    end
-  end  
 end

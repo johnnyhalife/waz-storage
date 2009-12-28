@@ -20,6 +20,21 @@ describe "Table object behavior" do
     tables.last().url.should == "url2"    
   end
   
+  it "should find a table by its name and return a WAZ::Tables::Table instance" do
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})     
+    WAZ::Tables::Service.any_instance.expects(:get_table).with('table1').returns({:name => 'table1', :url => 'url1'})
+    table = WAZ::Tables::Table.find('table1')
+    table.name.should == "table1"
+    table.url.should == "url1"    
+  end
+  
+  it "should return nil when looking for an unexisting table" do
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})     
+    WAZ::Tables::Service.any_instance.expects(:get_table).with('unexistingtable').raises(WAZ::Tables::TableDoesNotExist.new('unexistingtable'))
+    table = WAZ::Tables::Table.find('unexistingtable')
+    table.nil?.should == true  
+  end
+  
   it "should create table" do
     WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     WAZ::Tables::Service.any_instance.expects(:create_table)

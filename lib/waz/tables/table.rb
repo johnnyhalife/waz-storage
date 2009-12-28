@@ -6,14 +6,26 @@ module WAZ
     #	# list available tables
     #	WAZ::Tables::Table.list
     #
-    #	# create a new table
-    #	new_table = WAZ::Tables::Table.create('test-table')
-    #
+  	# # get a specific table
+  	# my_table = WAZ::Tables::Table.find('my-table')
+  	#    
     #	# delete table
-    #	new_table.destroy!
+    #	my_table.destroy!
+    #
+    #	# create a new table
+    #	WAZ::Tables::Table.create('new-table')
     #
     class Table
       class << self
+        # Finds a table by name. It will return nil if no table was found.
+        def find(table_name)
+          begin 
+            WAZ::Tables::Table.new(service_instance.get_table(table_name))
+          rescue WAZ::Tables::TableDoesNotExist
+            return nil
+          end
+        end
+                
         # Returns an array of the existing tables (WAZ::Tables::Table) on the current 
         # Windows Azure Storage account.
         def list()

@@ -15,27 +15,21 @@ describe "tables service behavior" do
   it "should get a table" do
     response = <<-eos
     <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-    <feed xml:base="http://myaccount.tables.core.windows.net/" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns="http://www.w3.org/2005/Atom">
-      <title type="text">Tables</title>
-      <id>http://myaccount.tables.core.windows.net/Tables</id>
-      <updated>2009-01-04T17:18:54.7062347Z</updated>
-      <link rel="self" title="Tables" href="Tables" />
-      <entry>
-        <id>http://myaccount.tables.core.windows.net/Tables('table1')</id>
-        <title type="text"></title>
-        <updated>2009-01-04T17:18:54.7062347Z</updated>
-        <author>
-          <name />
-        </author>
-        <link rel="edit" title="Tables" href="Tables('table1')" />
-        <category term="myaccount.Tables" scheme="http://schemas.microsoft.com/ado/2007/08/dataservices/scheme" />
-        <content type="application/xml">
-          <m:properties>
-            <d:TableName>table1</d:TableName>
-          </m:properties>
-        </content>
-      </entry>
-    </feed>
+    <entry xml:base="http://wazstoragejohnny.table.core.windows.net/" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns="http://www.w3.org/2005/Atom">
+      <id>http://myaccount.table.core.windows.net/Tables('table1')</id>
+      <title type="text"></title>
+      <updated>2009-12-28T02:00:21Z</updated>
+      <author>
+        <name />
+      </author>
+      <link rel="edit" title="Tables" href="Tables('table1')" />
+      <category term="wazstoragejohnny.Tables" scheme="http://schemas.microsoft.com/ado/2007/08/dataservices/scheme" />
+      <content type="application/xml">
+        <m:properties>
+          <d:TableName>table1</d:TableName>
+        </m:properties>
+      </content>
+    </entry>
     eos
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")
     response.stubs(:headers).returns({:x_ms_continuation_nexttablename => 'next-table'})
@@ -45,7 +39,7 @@ describe "tables service behavior" do
     service.expects(:generate_request).with(:get, "http://localhost/Tables('table1')", {'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx'}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost/Tables('table1')"))
     table = service.get_table('table1')
     table[:name].should == 'table1'
-    table[:url].should == "http://myaccount.tables.core.windows.net/Tables('table1')"    
+    table[:url].should == "http://myaccount.table.core.windows.net/Tables('table1')"    
   end  
   it "should list all tables" do
     response = <<-eos
