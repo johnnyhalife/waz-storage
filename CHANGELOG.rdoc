@@ -1,4 +1,8 @@
 = Revision History for Windows Azure Storage for Ruby
+=== v0.5.9 - (Juan Pablo Garcia Dalolla)
+- Added signature support for Tables service since it differs slightly from that for a request against the Blob or Queue services, according to http://msdn.microsoft.com/en-us/library/dd179428.aspx
+- Added Table operations to enumerate the tables in a storage account, create a new table, and delete an existing table.
+
 === v0.5.8 - (Johnny Halife)
 - Fixed an issue on the Queues Documentation (thanks @ezequielm)
 - Added _naming validation for Containers_ according to http://msdn.microsoft.com/en-us/library/dd135715.aspx (thanks @panosjee)

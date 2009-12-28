@@ -11,7 +11,6 @@ require 'base64'
 require 'tests/configuration'
 require 'lib/waz-blobs'
 
-
 describe "blobs service behavior" do
   it "should create container" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
