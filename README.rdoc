@@ -112,6 +112,35 @@ I've been doing lot of testing around and it works seamlessly with the current W
 
 It's pretty intuitive, but full documentation (RDoc) is available for the API for further reference.	
 
+== Usage: Tables
+(Work in progress)
+The tables implementation inside this gem is fully compliant with the spec available at http://msdn.microsoft.com/en-us/library/dd179423.aspx. The Windows 
+Azure Tables REST API isn't fully covered here (see TODO's for more information).
+
+	require 'waz-storage'
+	require 'waz-tables'
+
+	WAZ::Storage::Base.establish_connection!(:account_name => account_name,
+	                                         :access_key => access_key)
+
+	# creates a new table
+	table = WAZ::Tables::Table.create('my-table')
+
+	# list available tables
+	WAZ::Tables::Table.list
+
+	# get a specific table, returning nil when the specified table is not found
+	my_table = WAZ::Tables::Table.find('my-table')
+
+	# table properties
+	my_table.name
+	my_table.url
+	
+	# delete a table
+	my_table.destroy!
+
+It's pretty intuitive, but full documentation (RDoc) is available for the API for further reference.
+
 == Usage: Contextual Connection Handling
 Sometimes while you are building a web application you may require handling different storage account but contextualized. The sample
 that comes to my mind is something like a Storage Explorer or Account Monitor for WAZ. 
@@ -130,9 +159,6 @@ is stack based, and will let you scope your context for some rare cases where yo
 *Disclaimer*: Moving objects across context isn't contemplated yet, and if you try to do changes among scopes you will get 
 to some wired Windows Azure Errors regarding objects that may not exist.
 
-== Usage: Tables
-Not yet, but soon may be.
-
 === Remarks
 Windows Azure Storage API works flawlessly from Heroku and custom ruby hosting deployments on EC2, as far as I tested it. You can leverage the storage
 services without the need of having to write the application on .NET or hosting your application on Windows Azure.
@@ -144,7 +170,7 @@ As far as users start using it, I'll be building a backlog and probably handling
 TODO's already enqueued for further releases of the waz-storage API.
 
 - Implement the remaining features of Blobs (Blocks Management)
-- Implement Tables API (ATOM FEED).
+- Implement Tables API (Entities).
 - Generate a sample application to better show the usage.
 
 The things listed above do not represent any sort of priority, or the order they are going to be tackled. It's just a list. 
