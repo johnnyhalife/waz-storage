@@ -10,11 +10,14 @@ require 'lib/waz-tables'
 describe "Table object behavior" do
   it "should list tables" do
     WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
-    WAZ::Tables::Service.any_instance.expects(:list_tables).returns([{:name => 'table1'}, {:name => 'table2'}])
+    result = [ {:name => 'table1', :url => 'url1'}, {:name => 'table2', :url => 'url2'} ], nil 
+    WAZ::Tables::Service.any_instance.expects(:list_tables).returns(result)
     tables = WAZ::Tables::Table.list
     tables.size.should == 2
     tables.first().name.should == "table1"
+    tables.first().url.should == "url1"    
     tables.last().name.should == "table2"
+    tables.last().url.should == "url2"    
   end
   
   it "should create table" do

@@ -14,12 +14,17 @@ module WAZ
     #
     class Table
       class << self
-        # Returns an array of the tables (WAZ::Tables::Table) existing on the current 
+        # Returns an array of the existing tables (WAZ::Tables::Table) on the current 
         # Windows Azure Storage account.
         def list()
-          service_instance.list_tables().map do |table|
-            WAZ::Tables::Table.new(table)
-          end
+          tables, next_table_name = [], nil
+          begin
+            table_list, next_table_name = service_instance.list_tables(next_table_name)
+            table_list.each do |table|
+              tables << WAZ::Tables::Table.new({ :name => table[:name], :url => table[:url] })
+            end
+          end while next_table_name != nil and !next_table_name.empty?
+          tables
         end
         
         # Creates a table on the current account.
@@ -38,11 +43,12 @@ module WAZ
         end       
       end
 
-      attr_accessor :name
+      attr_accessor :name, :url
 
       def initialize(options = {})
         raise WAZ::Storage::InvalidOption, :name unless options.keys.include?(:name)
         self.name = options[:name]
+        self.url = options[:url]        
       end
       
       # Removes the table from the current account.

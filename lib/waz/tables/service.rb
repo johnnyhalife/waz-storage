@@ -27,13 +27,29 @@ module WAZ
       
       # Lists all existing tables on the current storage account.
       def list_tables(next_table_name = nil)
-        content = execute :get, 'Tables', {}, { 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
+        query = { 'NextTableName' => next_table_name } unless next_table_name.nil?
+        content = execute :get, "Tables", query ||= {}, { 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
+
         doc = REXML::Document.new(content)
-        tables = []
-        REXML::XPath.match(doc, "//d:TableName", {"d" => "http://schemas.microsoft.com/ado/2007/08/dataservices"}).each do |item|
-          tables << { :name => item.text }
+        tables = REXML::XPath.each(doc, '/feed/entry').map do |item|
+            { :name => REXML::XPath.first(item.elements['content'], "m:properties/d:TableName", {"m" => "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata", "d" => "http://schemas.microsoft.com/ado/2007/08/dataservices"}).text,
+              :url => REXML::XPath.first(item, "id").text }
         end
-        return tables
+        
+        return tables, content.headers[:x_ms_continuation_nexttablename]
+      end
+      
+      # Lists all existing tables on the current storage account.
+      def get_table(table_name)
+        begin
+          content = execute :get, "Tables('#{table_name}')", {}, { 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
+          doc = REXML::Document.new(content)
+          item = REXML::XPath.first(doc, "/feed/entry")
+          return {  :name => REXML::XPath.first(item.elements['content'], "m:properties/d:TableName", {"m" => "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata", "d" => "http://schemas.microsoft.com/ado/2007/08/dataservices"}).text,
+                    :url => REXML::XPath.first(item, "id").text }
+        rescue RestClient::ResourceNotFound
+          raise WAZ::Tables::TableDoesNotExist, table_name if $!.http_code == 404
+        end        
       end
     end
   end
