@@ -10,7 +10,7 @@ module WAZ
         payload = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><entry xmlns:d=\"http://schemas.microsoft.com/ado/2007/08/dataservices\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\" xmlns=\"http://www.w3.org/2005/Atom\"><title /><updated>#{Time.now.utc.iso8601}</updated><author><name/></author><id/><content type=\"application/xml\"><m:properties><d:TableName>#{table_name}</d:TableName></m:properties></content></entry>"
         
         begin
-          execute :post, 'Tables', {}, { 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, payload
+          execute :post, 'Tables', {}, { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, payload
         rescue RestClient::RequestFailed
           raise WAZ::Tables::TableAlreadyExists, table_name if $!.http_code == 409
         end
@@ -19,7 +19,7 @@ module WAZ
       # Delete a table on the current Windows Azure Storage account.
       def delete_table(table_name)
         begin
-          execute :delete, "Tables('#{table_name}')", {}, { 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
+          execute :delete, "Tables('#{table_name}')", {}, { 'Date' => Time.new.httpdate,  'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
         rescue RestClient::ResourceNotFound
           raise WAZ::Tables::TableDoesNotExist, table_name if $!.http_code == 404
         end
@@ -28,7 +28,7 @@ module WAZ
       # Lists all existing tables on the current storage account.
       def list_tables(next_table_name = nil)
         query = { 'NextTableName' => next_table_name } unless next_table_name.nil?
-        content = execute :get, "Tables", query ||= {}, { 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
+        content = execute :get, "Tables", query ||= {}, { 'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
 
         doc = REXML::Document.new(content)
         tables = REXML::XPath.each(doc, '/feed/entry').map do |item|
@@ -42,7 +42,7 @@ module WAZ
       # Lists all existing tables on the current storage account.
       def get_table(table_name)
         begin
-          content = execute :get, "Tables('#{table_name}')", {}, { 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
+          content = execute :get, "Tables('#{table_name}')", {}, { 'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
           doc = REXML::Document.new(content)
           item = REXML::XPath.first(doc, "entry")
           return {  :name => REXML::XPath.first(item.elements['content'], "m:properties/d:TableName", {"m" => "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata", "d" => "http://schemas.microsoft.com/ado/2007/08/dataservices"}).text,

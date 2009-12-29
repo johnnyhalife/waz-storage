@@ -3,12 +3,13 @@ module WAZ
     # This module is imported by the specific services that use Shared Key authentication profile. On the current implementation
     # this module is imported from WAZ::Queues::Service and WAZ::Blobs::Service.
     module SharedKeyCoreService
-      attr_accessor :account_name, :access_key, :use_ssl, :base_url
+      attr_accessor :account_name, :access_key, :use_ssl, :base_url, :type_of_service
       
       # Creates an instance of the implementor service (internally used by the API).
       def initialize(options = {})
         self.account_name = options[:account_name]
         self.access_key = options[:access_key]
+        self.type_of_service = options[:type_of_service]        
         self.use_ssl = options[:use_ssl] or false
         self.base_url = "#{options[:type_of_service] or "blobs"}.#{options[:base_url] or "core.windows.net"}"
       end
@@ -56,29 +57,19 @@ module WAZ
       # the canonicalized header line and the canonical form of the message, all of the joined by \n character. Encoded with 
       # Base64 and encrypted with SHA256 using the access_key as the seed.
       def generate_signature(request)
-        return generate_signature_table(request) if request.headers["DataServiceVersion"] == "1.0;NetFx"
         return generate_signature20090919(request) if request.headers["x-ms-version"] == "2009-09-19"
 
         signature = request.method.to_s.upcase + "\x0A" +
                      (request.headers["Content-MD5"] or "") + "\x0A" +
                      (request.headers["Content-Type"] or "") + "\x0A" +
-                     (request.headers["Date"] or "")+ "\x0A" +
-                     canonicalize_headers(request.headers) + "\x0A" +
-                     canonicalize_message(request.url)
+                     (request.headers["Date"] or "")+ "\x0A"
+
+        signature += canonicalize_headers(request.headers) + "\x0A" unless self.type_of_service == 'table'
+        signature += canonicalize_message(request.url)
                      
         Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature.toutf8).digest)
       end
 
-      def generate_signature_table(request)
-        signature = request.method.to_s.upcase + "\x0A" +
-                     (request.headers["Content-MD5"] or "") + "\x0A" +
-                     (request.headers["Content-Type"] or "") + "\x0A" +
-                     (request.headers["Date"] or request.headers["x-ms-Date"] or "")+ "\x0A" +
-                     canonicalize_message(request.url)
-                     
-        Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature.toutf8).digest) 
-      end      
-      
       def generate_signature20090919(request)
         signature = request.method.to_s.upcase + "\x0A" +
                     (request.headers["Content-Encoding"] or "") + "\x0A" +

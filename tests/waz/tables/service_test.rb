@@ -36,7 +36,7 @@ describe "tables service behavior" do
 
     RestClient::Request.any_instance.expects(:execute).returns(response)
     service.expects(:generate_request_uri).with("Tables('table1')", {}, nil).returns("http://localhost/Tables('table1')")
-    service.expects(:generate_request).with(:get, "http://localhost/Tables('table1')", {'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx'}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost/Tables('table1')"))
+    service.expects(:generate_request).with(:get, "http://localhost/Tables('table1')", { 'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx'}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost/Tables('table1')"))
     table = service.get_table('table1')
     table[:name].should == 'table1'
     table[:url].should == "http://myaccount.table.core.windows.net/Tables('table1')"    
@@ -86,7 +86,7 @@ describe "tables service behavior" do
 
     RestClient::Request.any_instance.expects(:execute).returns(response)
     service.expects(:generate_request_uri).with("Tables", {}, nil).returns("http://localhost/Tables")
-    service.expects(:generate_request).with(:get, "http://localhost/Tables", {'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx'}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost/Tables"))
+    service.expects(:generate_request).with(:get, "http://localhost/Tables", { 'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx'}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost/Tables"))
     tables, next_table_name = service.list_tables
     tables.length.should == 2
     tables.first()[:name].should == 'table1'
@@ -102,7 +102,7 @@ describe "tables service behavior" do
     response.stubs(:headers).returns({:x_ms_continuation_nexttablename => 'next-table'})
     RestClient::Request.any_instance.expects(:execute).returns(response)
     service.expects(:generate_request_uri).with("Tables", { 'NextTableName' => 'next-table-name' }, nil).returns("http://localhost/Tables?NextTableName=next-table-name")
-    service.expects(:generate_request).with(:get, "http://localhost/Tables?NextTableName=next-table-name", {'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx'}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost/Tables?NextTableName=next-table-name"))
+    service.expects(:generate_request).with(:get, "http://localhost/Tables?NextTableName=next-table-name", {'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx'}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost/Tables?NextTableName=next-table-name"))
     tables, next_table_name = service.list_tables('next-table-name')
   end
   
@@ -112,7 +112,7 @@ describe "tables service behavior" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute)
     service.expects(:generate_request_uri).with("Tables", {}).returns("http://localhost/Tables")
-    service.expects(:generate_request).with(:post, "http://localhost/Tables", { 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, expected_payload).returns(RestClient::Request.new(:method => :post, :url => "http://localhost/Tables"))
+    service.expects(:generate_request).with(:post, "http://localhost/Tables", { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, expected_payload).returns(RestClient::Request.new(:method => :post, :url => "http://localhost/Tables"))
     service.create_table('mock-table')
   end
     
@@ -130,7 +130,7 @@ describe "tables service behavior" do
     response.stubs(:code).returns(204)
     RestClient::Request.any_instance.expects(:execute).returns(response)
     service.expects(:generate_request_uri).with("Tables('table-to-delete')", {}).returns("http://localhost/Tables('table-to-delete')")
-    service.expects(:generate_request).with(:delete, "http://localhost/Tables('table-to-delete')", { 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, nil).returns(RestClient::Request.new(:method => :delete, :url => "http://localhost/Tables('tabletodelete')"))
+    service.expects(:generate_request).with(:delete, "http://localhost/Tables('table-to-delete')", { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, nil).returns(RestClient::Request.new(:method => :delete, :url => "http://localhost/Tables('tabletodelete')"))
     service.delete_table('table-to-delete')
   end
   

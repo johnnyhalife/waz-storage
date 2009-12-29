@@ -70,7 +70,7 @@ describe "blobs service behavior" do
                 :access_key => "Tm870FVNS14aNW1zsn13fZykc4yDKz82W8m4qujIZTayOJvhOePsjSFIsFnQF8rPnDaRJQJwzhoziI7ZtIWTsQ==" }
 
     WAZ::Storage::Base.establish_connection(options) do
-      WAZ::Tables::Table.list.length
+      table = WAZ::Tables::Table.list 
     end
   end  
 end
