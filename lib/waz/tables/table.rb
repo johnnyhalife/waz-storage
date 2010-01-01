@@ -19,6 +19,7 @@ module WAZ
       class << self
         # Finds a table by name. It will return nil if no table was found.
         def find(table_name)
+          raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
           begin 
             WAZ::Tables::Table.new(service_instance.get_table(table_name))
           rescue WAZ::Tables::TableDoesNotExist
@@ -41,9 +42,8 @@ module WAZ
         
         # Creates a table on the current account.
         def create(table_name)
-          raise WAZ::Storage::InvalidParameterValue, {:name => "name", :values => ["lower letters, numbers or - (hypen), and must not start or end with - (hyphen)"]} unless WAZ::Storage::ValidationRules.valid_name?(table_name)
-          service_instance.create_table(table_name)
-          WAZ::Tables::Table.new(:name => table_name)
+          raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+          WAZ::Tables::Table.new(service_instance.create_table(table_name))
         end
         
         # This method is internally used by this class. It's the way we keep a single instance of the 
@@ -58,7 +58,9 @@ module WAZ
       attr_accessor :name, :url
 
       def initialize(options = {})
-        raise WAZ::Storage::InvalidOption, :name unless options.keys.include?(:name)
+        raise WAZ::Storage::InvalidOption, :name unless options.keys.include?(:name) and !options[:name].empty?
+        raise WAZ::Storage::InvalidOption, :url unless options.keys.include?(:url) and !options[:url].empty?        
+        raise WAZ::Storage::InvalidParameterValue, {:name => options[:name], :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(options[:name])        
         self.name = options[:name]
         self.url = options[:url]        
       end

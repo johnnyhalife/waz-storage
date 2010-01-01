@@ -11,6 +11,15 @@ module WAZ
         def valid_name?(name)
           name =~ /^[a-z0-9][a-z0-9\-]{1,}[^-]$/ && name.length < 64
         end
+
+        # Validates that the Table name given matches with the requirements of Windows Azure. 
+        #
+        # -Table names must start with at least one lower / upper character.
+        # -Table names can have character or any digit starting from the second position.
+        # -Table names must be from 3 through 63 characters long.
+        def valid_table_name?(name)
+          name =~ /^([a-z]|[A-Z]){1}([a-z]|[A-Z]|\d){2,62}$/
+        end
       end
     end
   end

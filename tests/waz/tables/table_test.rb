@@ -8,6 +8,12 @@ require 'restclient'
 require 'lib/waz-tables'
 
 describe "Table object behavior" do
+  it "should initialize a new table" do
+    table = WAZ::Tables::Table.new({:name => 'tablename', :url => 'http://localhost' })
+    table.name.should == 'tablename'
+    table.url.should == 'http://localhost'
+  end
+  
   it "should list tables" do
     WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
     result = [ {:name => 'table1', :url => 'url1'}, {:name => 'table2', :url => 'url2'} ], nil 
@@ -37,15 +43,16 @@ describe "Table object behavior" do
   
   it "should create table" do
     WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
-    WAZ::Tables::Service.any_instance.expects(:create_table)
+    WAZ::Tables::Service.any_instance.expects(:create_table).returns({:name => 'table1', :url => 'http://foo'})
     table = WAZ::Tables::Table.create('table1') 
     table.name.should == "table1"
   end
   
   it "should destroy a table" do
     WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my_account", :access_key => "key"})
-    WAZ::Tables::Service.any_instance.expects(:delete_table).with("table-to-delete")
-    table = WAZ::Tables::Table.new(:name => 'table-to-delete')
+    WAZ::Tables::Service.any_instance.expects(:delete_table).with("tabletodelete")
+    WAZ::Tables::Service.any_instance.expects(:get_table).returns({:name => 'tabletodelete', :url => 'http://localhost'})
+    table = WAZ::Tables::Table.find('tabletodelete')
     table.destroy!
   end
   
@@ -53,12 +60,12 @@ describe "Table object behavior" do
     lambda { WAZ::Tables::Table.new({:foo => "bar"}) }.should raise_error(WAZ::Storage::InvalidOption)
   end
   
-  it "should raise an exception when table name starts with - (hypen)" do
-    lambda { WAZ::Tables::Table.create('-table')  }.should raise_error(WAZ::Storage::InvalidParameterValue)
+  it "should raise an exception when table name starts with no lower/upper char" do
+    lambda { WAZ::Tables::Table.create('9table')  }.should raise_error(WAZ::Storage::InvalidParameterValue)
   end
   
-  it "should raise an exception when table name  ends with - (hypen)" do
-    lambda { WAZ::Tables::Table.create('table-')  }.should raise_error(WAZ::Storage::InvalidParameterValue)
+  it "should raise an exception when table contains any other char than letters or digits" do
+    lambda { WAZ::Tables::Table.create('table-name')  }.should raise_error(WAZ::Storage::InvalidParameterValue)
   end
   
   it "should raise an exception when table name is less than 3" do
@@ -68,5 +75,27 @@ describe "Table object behavior" do
   it "should raise an exception when table name is longer than 63" do
     lambda { WAZ::Tables::Table.create('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')  }.should raise_error(WAZ::Storage::InvalidParameterValue)
   end
+
+  it "should raise an exception when :url option is not provided" do
+    lambda { WAZ::Tables::Table.new({:name => 'name'})  }.should raise_error(WAZ::Storage::InvalidOption)
+  end
   
+  it "should raise an exception when :name option is not provided" do
+    lambda { WAZ::Tables::Table.new({:url => 'url'})  }.should raise_error(WAZ::Storage::InvalidOption)
+  end
+  
+  it "should raise an exception when :name is empty" do
+    lambda { WAZ::Tables::Table.new({:name => '', :url => 'url'})  }.should raise_error(WAZ::Storage::InvalidOption)
+  end
+  
+  it "should raise an exception when :url is empty" do
+    lambda { WAZ::Tables::Table.new({:name => 'name', :url => ''})  }.should raise_error(WAZ::Storage::InvalidOption)
+  end
+    
+  it "should raise an exception when invalid table name is provided" do
+    options = {:name => '1invalidname', :url => 'url'}
+    options.stubs(:keys).returns([:name, :url])
+    WAZ::Tables::Table.any_instance.stubs(:new).with(options).raises(WAZ::Storage::InvalidParameterValue)
+    lambda { WAZ::Tables::Table.new(options)  }.should raise_error(WAZ::Storage::InvalidParameterValue)
+  end
 end
