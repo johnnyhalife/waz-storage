@@ -156,7 +156,8 @@ describe "tables service behavior" do
   it "should insert a new entity" do
     expected_payload = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>" \
                        "<entry xmlns:d=\"http://schemas.microsoft.com/ado/2007/08/dataservices\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\" xmlns=\"http://www.w3.org/2005/Atom\">" \
-                       "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><id />" \
+                       "<id>https://table.localhost/mocktable(PartitionKey='mypartitionkey',RowKey='myrowkey1')</id>" \
+                       "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"mocktable\" href=\"mocktable(PartitionKey='mypartitionkey',RowKey='myrowkey1')\" />" \
                        "<content type=\"application/xml\">" \
                        "<m:properties>" \
                              "<d:Address m:type=\"Edm.String\">Mountain View</d:Address>" \
@@ -249,7 +250,55 @@ describe "tables service behavior" do
     request_failed.stubs(:http_code).returns(404)
 
     RestClient::Request.any_instance.expects(:execute).raises(request_failed)
-    lambda { service.delete_entity('existing', 'myPartitionKey', 'myRowKey1') }.should raise_error(WAZ::Tables::EntityDoesNotExist, "The specified entity with (PartitionKey='myPartitionKey',RowKey='myRowKey1') does not exist.")
+    lambda { service.delete_entity('table', 'myPartitionKey', 'myRowKey1') }.should raise_error(WAZ::Tables::EntityDoesNotExist, "The specified entity with (PartitionKey='myPartitionKey',RowKey='myRowKey1') does not exist.")
+  end
+  
+  it "should get an entity by a given partitionkey and rowkey" do
+    mock_response = <<-eom
+    <?xml version="1.0" encoding="utf-8" standalone="yes"?>
+    <entry xml:base="http://wazstoragejohnny.table.core.windows.net/" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" m:etag="W/&quot;datetime'2010-01-01T15%3A50%3A49.9612116Z'&quot;" xmlns="http://www.w3.org/2005/Atom">
+        <id>http://myaccount.tables.core.windows.net/mocktable(PartitionKey='myPartitionKey',RowKey='myRowKey1')</id>
+        <title type="text"></title>
+        <updated>2008-10-01T15:26:13Z</updated>
+        <author>
+          <name />
+        </author>
+        <link rel="edit" title="mocktable" href="mocktable (PartitionKey='myPartitionKey',RowKey='myRowKey1')" />
+        <category term="myaccount.Customers" scheme="http://schemas.microsoft.com/ado/2007/08/dataservices/scheme" />
+        <content type="application/xml">
+          <m:properties>
+            <d:PartitionKey>myPartitionKey</d:PartitionKey>
+            <d:RowKey>myRowKey1</d:RowKey>
+            <d:Timestamp m:type="Edm.DateTime">2008-10-01T15:26:04.6812774Z</d:Timestamp>
+            <d:Address>123 Lakeview Blvd, Redmond WA 98052</d:Address>
+            <d:CustomerSince m:type="Edm.DateTime">2008-10-01T15:25:05.2852025Z</d:CustomerSince>
+            <d:Discount m:type="Edm.Double">10</d:Discount>
+            <d:Rating m:type="Edm.Int32">3</d:Rating>
+            <d:BinaryData m:type="Edm.Binary" m:null="true" />
+          </m:properties>
+        </content>
+      </entry>
+    eom
+    expected_headers = {'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}    
+
+    service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")
+    RestClient::Request.any_instance.expects(:execute).returns(mock_response)
+    service.expects(:generate_request_uri).with("mocktable(PartitionKey='myPartitionKey',RowKey='myRowKey1')", {}).returns("http://localhost/mocktable(PartitionKey='myPartitionKey',RowKey='myRowKey1'")
+    service.expects(:generate_request).with(:get, "http://localhost/mocktable(PartitionKey='myPartitionKey',RowKey='myRowKey1'", expected_headers, nil).returns(RestClient::Request.new(:method => :post, :url => "http://localhost/mocktable(PartitionKey='myPartitionKey',RowKey='myRowKey1'", :headers => expected_headers))
+
+    entity = service.get_entity('mocktable', 'myPartitionKey', 'myRowKey1')
+    
+    entity[:table_name].should == 'mocktable'
+    entity[:partition_key].should == 'myPartitionKey'
+    entity[:row_key].should == 'myRowKey1'
+    entity[:fields].length.should == 6
+
+    entity[:fields][0].should == { :name => 'Timestamp', :type => 'DateTime', :value => '2008-10-01T15:26:04.6812774Z'}
+    entity[:fields][1].should == { :name => 'Address', :type => 'String', :value => '123 Lakeview Blvd, Redmond WA 98052'}    
+    entity[:fields][2].should == { :name => 'CustomerSince', :type => 'DateTime', :value => '2008-10-01T15:25:05.2852025Z'}
+    entity[:fields][3].should == { :name => 'Discount', :type => 'Double', :value => 10}
+    entity[:fields][4].should == { :name => 'Rating', :type => 'Int32', :value => 3}   
+    entity[:fields][5].should == { :name => 'BinaryData', :type => 'Binary', :value => nil}            
   end
   
   it "should throw when invalid table name is provided" do
@@ -275,5 +324,10 @@ describe "tables service behavior" do
   it "should throw when invalid table name is provided" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
     lambda { service.delete_entity('9existing', 'foo', 'foo') }.should raise_error(WAZ::Storage::InvalidParameterValue)
+  end
+  
+  it "should throw when invalid table name is provided" do
+    service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
+    lambda { service.get_entity('9existing', 'foo', 'foo') }.should raise_error(WAZ::Storage::InvalidParameterValue)
   end
 end
