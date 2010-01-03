@@ -151,7 +151,7 @@ Azure Tables REST API isn't fully covered here (see TODO's for more information)
 	# Entity operations using the Table service
 
 	# get the existing service instance
-    service = WAZ::Tables::Table.service_instance
+	service = WAZ::Tables::Table.service_instance
 
 	# define a new entity with its fields
 	fields = {'Address' => { :type => 'String', :value => 'Mountain View'},
@@ -168,7 +168,7 @@ Azure Tables REST API isn't fully covered here (see TODO's for more information)
 	service.insert_entity 'customer_table', entity
 	
 	# retrieves all entities from a table
-    entities = service.query_entity('customer_table')
+	entities = service.query_entity('customer_table')
 
 	# retrieves all records that match with the specified query but only the first fifteen rows
 	service.query_entity('customer_table', "(PartitionKey eq 'customer') and (Age eq 23)", 15)
