@@ -3,7 +3,7 @@ module WAZ
     # This module is imported by the specific services that use Shared Key authentication profile. On the current implementation
     # this module is imported from WAZ::Queues::Service and WAZ::Blobs::Service.
     module SharedKeyCoreService
-      attr_accessor :account_name, :access_key, :use_ssl, :base_url, :type_of_service
+      attr_accessor :account_name, :access_key, :use_ssl, :base_url, :type_of_service, :use_devenv
       
       # Creates an instance of the implementor service (internally used by the API).
       def initialize(options = {})
@@ -11,7 +11,9 @@ module WAZ
         self.access_key = options[:access_key]
         self.type_of_service = options[:type_of_service]        
         self.use_ssl = options[:use_ssl] or false
-        self.base_url = "#{options[:type_of_service] or "blobs"}.#{options[:base_url] or "core.windows.net"}"
+        self.use_devenv = (!options[:use_devenv].nil? and options[:use_devenv])
+        self.base_url = "#{options[:type_of_service] or "blobs"}.#{options[:base_url] or "core.windows.net"}" if (options[:use_devenv].nil? or !options[:use_devenv])
+        self.base_url = (options[:base_url] or "core.windows.net") if !options[:use_devenv].nil? and options[:use_devenv]
       end
       
       # Generates a request based on Adam Wiggings' rest-client, including all the required headers
@@ -32,7 +34,8 @@ module WAZ
       def generate_request_uri(path = nil, options = {})
         protocol = use_ssl ? "https" : "http"
         query_params = options.keys.sort{ |a, b| a.to_s <=> b.to_s}.map{ |k| "#{k.to_s.gsub(/_/, '')}=#{CGI.escape(options[k].to_s)}"}.join("&") unless options.nil? or options.empty?
-        uri = "#{protocol}://#{account_name}.#{base_url}#{(path or "").start_with?("/") ? "" : "/"}#{(path or "")}"
+        uri = "#{protocol}://#{base_url}/#{account_name}#{(path or "").start_with?("/") ? "" : "/"}#{(path or "")}" if !self.use_devenv.nil? and self.use_devenv
+        uri = "#{protocol}://#{account_name}.#{base_url}#{(path or "").start_with?("/") ? "" : "/"}#{(path or "")}" if self.use_devenv.nil? or !self.use_devenv
         uri << "?#{query_params}" if query_params
         return uri
       end
@@ -101,7 +104,7 @@ module WAZ
       # Generates a Windows Azure Storage call, it internally calls url generation method
       # and the request generation message.
       def execute(verb, path, query = {}, headers = {}, payload = nil)
-        url = generate_request_uri(path, query)
+        url = generate_request_uri(path, query)        
         request = generate_request(verb, url, headers, payload)
         request.execute()
       end

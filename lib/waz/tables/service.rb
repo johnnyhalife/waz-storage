@@ -67,22 +67,24 @@ module WAZ
         raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
         raise WAZ::Tables::TooManyProperties, entity[:fields].length if entity[:fields].length > 252 
         
-        payload = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>" \
-                   "<entry xmlns:d=\"http://schemas.microsoft.com/ado/2007/08/dataservices\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\" xmlns=\"http://www.w3.org/2005/Atom\">" \
-                   "<id>#{self.use_ssl ? 'https://' : 'http://'}#{self.base_url}/#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')</id>" \
-                   "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"#{table_name}\" href=\"#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')\" /><content type=\"application/xml\"><m:properties>"
-
-        entity[:fields].each { |f| payload << (!f[:value].nil? ? "<d:#{f[:name]} m:type=\"Edm.#{f[:type]}\">#{f[:value].to_s}</d:#{f[:name]}>" : "<d:#{f[:name]} m:type=\"Edm.#{f[:type]}\" m:null=\"true\" />") }        
-
-        payload << "<d:PartitionKey>#{entity[:partition_key]}</d:PartitionKey>" \
-                   "<d:RowKey>#{entity[:row_key]}</d:RowKey>" \
-                   "<d:Timestamp m:type=\"Edm.DateTime\">#{Time.now.utc.iso8601}</d:Timestamp></m:properties></content></entry>"
         begin
-          parse_entity execute :post, table_name, {}, { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, payload
+          parse_entity execute :post, table_name, {}, { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, generate_payload(table_name, entity)
         rescue RestClient::RequestFailed          
           raise WAZ::Tables::EntityAlreadyExists, entity[:row_key] if $!.http_code == 409 and $!.response.body.include?('EntityAlreadyExists')          
         end     
       end
+      
+      # Update an existing entity on the current storage account.
+      # TODO: handle specific errors
+      def update_entity(table_name, entity)
+        raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+        
+        begin
+          parse_entity execute :put, "#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')", {}, { 'If-Match' => '*', 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' },  generate_payload(table_name, entity)
+        rescue
+          puts $!
+        end
+      end    
       
       # Delete an existing entity in a table.
       def delete_entity(table_name, partition_key, row_key)
@@ -115,7 +117,6 @@ module WAZ
         raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
         begin
           entities, next_partition_key, next_row_key = [], nil, nil
-          file = File.open('/Users/jpgarcia/Desktop/log.txt', 'w')
           begin
             query = {'$filter' => expression }
             query.merge!({ '$top' => top }) unless top.nil?
@@ -133,20 +134,40 @@ module WAZ
         end
       end
 
+      private 
+        def generate_payload(table_name, entity)
+          payload = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>" \
+                     "<entry xmlns:d=\"http://schemas.microsoft.com/ado/2007/08/dataservices\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\" xmlns=\"http://www.w3.org/2005/Atom\">" \
+                     "<id>#{generate_request_uri "#{table_name}"}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')</id>" \
+                     "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"#{table_name}\" href=\"#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')\" /><content type=\"application/xml\"><m:properties>"
+
+          entity[:fields].sort_by { |k| k }.each { |k,v| payload << (!v[:value].nil? ? "<d:#{k} m:type=\"Edm.#{v[:type]}\">#{v[:value].to_s}</d:#{k}>" : "<d:#{k} m:type=\"Edm.#{v[:type]}\" m:null=\"true\" />") }          
+
+          payload << "<d:PartitionKey>#{entity[:partition_key]}</d:PartitionKey>" unless entity[:fields].keys.include?('PartitionKey') 
+          payload << "<d:RowKey>#{entity[:row_key]}</d:RowKey>"  unless entity[:fields].keys.include?('RowKey') 
+          payload << "<d:Timestamp m:type=\"Edm.DateTime\">#{Time.now.utc.iso8601}</d:Timestamp>" unless entity[:fields].keys.include?('TimeStamp')
+          payload << "</m:properties></content></entry>"
+          file = File.open '/Users/jpgarcia/Desktop/text.xml', 'w'
+          file.write payload 
+          return payload
+        end
+
       private
         def parse_entity(response)
           doc = REXML::Document.new(response)
           xpath_query = REXML::XPath.first(doc, '/feed').nil? ? '/entry' : '/feed/entry' 
           entities = REXML::XPath.each(doc, xpath_query).map { |entry|
             table_name = REXML::XPath.first(entry, "link").attributes['title']
+            etag = entry.attributes['m:etag']
             partition_key = REXML::XPath.first(entry.elements['content'], "m:properties/d:PartitionKey", {"m" => DATASERVICES_METADATA_NAMESPACE, "d" => DATASERVICES_NAMESPACE}).text
             row_key = REXML::XPath.first(entry.elements['content'], "m:properties/d:RowKey", {"m" => DATASERVICES_METADATA_NAMESPACE, "d" => DATASERVICES_NAMESPACE}).text
             url = REXML::XPath.first(entry, "id").text 
 
             fields = REXML::XPath.each(entry.elements['content'], 'm:properties/*', {"m" => DATASERVICES_METADATA_NAMESPACE}).map { |f|
-              { :name => f.name, :type => f.attributes['m:type'].nil? ? 'String' : f.attributes['m:type'].gsub('Edm.',''), :value => parse_value(f) }
+              { f.name => { :type => f.attributes['m:type'].nil? ? 'String' : f.attributes['m:type'].gsub('Edm.',''), :value => parse_value(f) } }
             }
-            { :table_name => table_name, :partition_key => partition_key, :row_key => row_key , :url => url, :fields => fields}
+            fields = Hash[*fields.collect {|h| h.to_a}.flatten]
+            { :table_name => table_name, :etag => etag, :partition_key => partition_key, :row_key => row_key , :url => url, :fields => fields}
           }
           (xpath_query == '/feed/entry') ? entities : entities.first unless entities.nil?
         end

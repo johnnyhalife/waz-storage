@@ -156,8 +156,8 @@ describe "tables service behavior" do
   it "should insert a new entity" do
     expected_payload = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>" \
                        "<entry xmlns:d=\"http://schemas.microsoft.com/ado/2007/08/dataservices\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\" xmlns=\"http://www.w3.org/2005/Atom\">" \
-                       "<id>https://table.localhost/Customers(PartitionKey='mypartitionkey',RowKey='myrowkey1')</id>" \
-                       "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"Customers\" href=\"Customers(PartitionKey='mypartitionkey',RowKey='myrowkey1')\" />" \
+                       "<id>http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')</id>" \
+                       "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"Customers\" href=\"Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')\" />" \
                        "<content type=\"application/xml\">" \
                        "<m:properties>" \
                              "<d:Address m:type=\"Edm.String\">Mountain View</d:Address>" \
@@ -168,8 +168,8 @@ describe "tables service behavior" do
                              "<d:CustomerSince m:type=\"Edm.DateTime\">#{Time.now.utc.iso8601}</d:CustomerSince>" \
                              "<d:IsActive m:type=\"Edm.Boolean\">true</d:IsActive>" \
                              "<d:NumOfOrders m:type=\"Edm.Int64\">255</d:NumOfOrders>" \
-                             "<d:PartitionKey>mypartitionkey</d:PartitionKey>" \
-                             "<d:RowKey>myrowkey1</d:RowKey>" \
+                             "<d:PartitionKey>myPartitionKey</d:PartitionKey>" \
+                             "<d:RowKey>myRowKey1</d:RowKey>" \
                              "<d:Timestamp m:type=\"Edm.DateTime\">#{Time.now.utc.iso8601}</d:Timestamp>" \
                        "</m:properties></content></entry>"
                        
@@ -177,35 +177,77 @@ describe "tables service behavior" do
 
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute).returns(expected_payload)
+    service.expects(:generate_request_uri).with("Customers").returns("http://localhost/Customers")
     service.expects(:generate_request_uri).with("Customers", {}).returns("http://localhost/Customers")
     service.expects(:generate_request).with(:post, "http://localhost/Customers", expected_headers , expected_payload).returns(RestClient::Request.new(:method => :post, :url => "http://localhost/Customers", :headers => expected_headers, :payload => expected_payload))
 
-    fields = []
-    fields << { :name => 'Address', :type => 'String', :value => 'Mountain View'}
-    fields << { :name => 'Age', :type => 'Int32', :value => 23}
-    fields << { :name => 'AmountDue', :type => 'Double', :value => 200.23}
-    fields << { :name => 'BinaryData', :type => 'Binary', :value => nil}
-    fields << { :name => 'CustomerCode', :type => 'Guid', :value => 'c9da6455-213d-42c9-9a79-3e9149a57833'}            
-    fields << { :name => 'CustomerSince', :type => 'DateTime', :value => Time.now.utc.iso8601}
-    fields << { :name => 'IsActive', :type => 'Boolean', :value => true}
-    fields << { :name => 'NumOfOrders', :type => 'Int64', :value => 255}
-    entity = { :partition_key => 'mypartitionkey', :row_key => 'myrowkey1', :fields =>  fields }
+    fields = {'Address' => { :type => 'String', :value => 'Mountain View'},
+              'Age' => { :type => 'Int32', :value => 23},
+              'AmountDue' => { :type => 'Double', :value => 200.23},
+              'BinaryData' => { :type => 'Binary', :value => nil},
+              'CustomerCode' => { :type => 'Guid', :value => 'c9da6455-213d-42c9-9a79-3e9149a57833'},
+              'CustomerSince' =>{ :type => 'DateTime', :value => Time.now.utc.iso8601},
+              'IsActive' =>{ :type => 'Boolean', :value => true},
+              'NumOfOrders' => {:type => 'Int64', :value => 255}}
+              
+    entity = { :partition_key => 'myPartitionKey', :row_key => 'myRowKey1', :fields =>  fields }
     new_entity = service.insert_entity('Customers', entity)
     
     new_entity[:fields].length.should == 11
   end
   
+  it "should update an existing entity" do
+    service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")
+    expected_payload = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>" \
+                       "<entry xmlns:d=\"http://schemas.microsoft.com/ado/2007/08/dataservices\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\" xmlns=\"http://www.w3.org/2005/Atom\">" \
+                       "<id>http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')</id>" \
+                       "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"Customers\" href=\"Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')\" />" \
+                       "<content type=\"application/xml\">" \
+                       "<m:properties>" \
+                             "<d:Address m:type=\"Edm.String\">Mountain View</d:Address>" \
+                             "<d:Age m:type=\"Edm.Int32\">23</d:Age>" \
+                             "<d:AmountDue m:type=\"Edm.Double\">200.23</d:AmountDue>" \
+                             "<d:BinaryData m:type=\"Edm.Binary\" m:null=\"true\" />" \
+                             "<d:CustomerCode m:type=\"Edm.Guid\">c9da6455-213d-42c9-9a79-3e9149a57833</d:CustomerCode>" \
+                             "<d:CustomerSince m:type=\"Edm.DateTime\">#{Time.now.utc.iso8601}</d:CustomerSince>" \
+                             "<d:IsActive m:type=\"Edm.Boolean\">true</d:IsActive>" \
+                             "<d:NumOfOrders m:type=\"Edm.Int64\">255</d:NumOfOrders>" \
+                             "<d:PartitionKey>myPartitionKey</d:PartitionKey>" \
+                             "<d:RowKey>myRowKey1</d:RowKey>" \
+                             "<d:Timestamp m:type=\"Edm.DateTime\">#{Time.now.utc.iso8601}</d:Timestamp>" \
+                       "</m:properties></content></entry>"                       
+    expected_headers = {'If-Match' => '*', 'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}    
+    
+    RestClient::Request.any_instance.expects(:execute).returns(expected_payload)
+    service.expects(:generate_request_uri).with("Customers").returns("http://localhost/Customers")
+    service.expects(:generate_request_uri).with("Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", {}).returns("http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')")
+    service.expects(:generate_request).with(:put, "http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", expected_headers , expected_payload).returns(RestClient::Request.new(:method => :post, :url => "http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", :headers => expected_headers, :payload => expected_payload))
+
+    fields = {'Address' => { :type => 'String', :value => 'Mountain View'},
+              'Age' => { :type => 'Int32', :value => 23},
+              'AmountDue' => { :type => 'Double', :value => 200.23},
+              'BinaryData' => { :type => 'Binary', :value => nil},
+              'CustomerCode' => { :type => 'Guid', :value => 'c9da6455-213d-42c9-9a79-3e9149a57833'},
+              'CustomerSince' =>{ :type => 'DateTime', :value => Time.now.utc.iso8601},
+              'IsActive' =>{ :type => 'Boolean', :value => true},
+              'NumOfOrders' => {:type => 'Int64', :value => 255}}
+
+    entity = { :partition_key => 'myPartitionKey', :row_key => 'myRowKey1', :fields =>  fields }
+    updated_entity = service.update_entity('Customers', entity)
+    updated_entity[:fields].length.should == 11
+  end
+  
   it "should throw TooManyProperties exception" do 
-    fields = []
-    253.times { |i| fields << { :name => 'test' + i.to_s, :type => 'String', :value => i.to_s} }
-    entity = { :partition_key => 'mypartitionkey', :row_key => 'myrowkey1', :fields =>  fields }
+    fields = {}
+    253.times { |i| fields.merge!({ "test#{i.to_s}" => { :type => 'String', :value => i.to_s}}) }
+    entity = { :partition_key => 'myPartitionKey', :row_key => 'myRowKey1', :fields =>  fields }
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")       
     lambda {service.insert_entity('Customers', entity)}.should raise_error(WAZ::Tables::TooManyProperties, "The entity contains more properties than allowed (252). The entity has 253 properties.")        
   end
 
   it "should throw EntityAlreadyExists exception" do 
-    fields = [{ :name => 'name', :type => 'String', :value => 'value'} ]
-    entity = { :partition_key => 'mypartitionkey', :row_key => 'myrowkey1', :fields =>  fields }
+    fields = { 'name' => {  :type => 'String', :value => 'value'}}
+    entity = { :partition_key => 'myPartitionKey', :row_key => 'myRowKey1', :fields =>  fields }
 
     response = mock()
     response.stubs(:body).returns('EntityAlreadyExists The specified entity already exists')        
@@ -215,7 +257,7 @@ describe "tables service behavior" do
 
     RestClient::Request.any_instance.expects(:execute).raises(request_failed)    
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")       
-    lambda {service.insert_entity('Customers', entity)}.should raise_error(WAZ::Tables::EntityAlreadyExists, "The specified entity already exists. RowKey: myrowkey1")
+    lambda {service.insert_entity('Customers', entity)}.should raise_error(WAZ::Tables::EntityAlreadyExists, "The specified entity already exists. RowKey: myRowKey1")
   end
   
   it "should delete an existing entity" do
@@ -295,20 +337,21 @@ describe "tables service behavior" do
     entity[:table_name].should == 'Customers'
     entity[:partition_key].should == 'myPartitionKey'
     entity[:row_key].should == 'myRowKey1'
+    entity[:etag].should == "W/\"datetime'2010-01-01T15%3A50%3A49.9612116Z'\""    
     entity[:fields].length.should == 12
 
-    entity[:fields][0].should == { :name => 'PartitionKey', :type => 'String', :value => 'myPartitionKey'}    
-    entity[:fields][1].should == { :name => 'RowKey', :type => 'String', :value => 'myRowKey1'}        
-    entity[:fields][2].should == { :name => 'Timestamp', :type => 'DateTime', :value => '2008-10-01T15:26:04.6812774Z'}
-    entity[:fields][3].should == { :name => 'Address', :type => 'String', :value => '123 Lakeview Blvd, Redmond WA 98052'}    
-    entity[:fields][4].should == { :name => 'CustomerSince', :type => 'DateTime', :value => '2008-10-01T15:25:05.2852025Z'}
-    entity[:fields][5].should == { :name => 'Discount', :type => 'Double', :value => 10}
-    entity[:fields][6].should == { :name => 'Rating16', :type => 'Int16', :value => 3}
-    entity[:fields][7].should == { :name => 'Rating32', :type => 'Int32', :value => 6}
-    entity[:fields][8].should == { :name => 'Rating64', :type => 'Int64', :value => 9}           
-    entity[:fields][9].should == { :name => 'BinaryData', :type => 'Binary', :value => nil}            
-    entity[:fields][10].should == { :name => 'SomeBoolean', :type => 'Boolean', :value => true}            
-    entity[:fields][11].should == { :name => 'SomeSingle', :type => 'Single', :value => 9.3}                    
+    entity[:fields]['PartitionKey'].should  == { :type => 'String', :value => 'myPartitionKey'}    
+    entity[:fields]['RowKey'].should        == { :type => 'String', :value => 'myRowKey1'}        
+    entity[:fields]['Timestamp'].should     == { :type => 'DateTime', :value => '2008-10-01T15:26:04.6812774Z'}
+    entity[:fields]['Address'].should       == { :type => 'String', :value => '123 Lakeview Blvd, Redmond WA 98052'}    
+    entity[:fields]['CustomerSince'].should == { :type => 'DateTime', :value => '2008-10-01T15:25:05.2852025Z'}
+    entity[:fields]['Discount'].should      == { :type => 'Double', :value => 10}
+    entity[:fields]['Rating16'].should      == { :type => 'Int16', :value => 3}
+    entity[:fields]['Rating32'].should      == { :type => 'Int32', :value => 6}
+    entity[:fields]['Rating64'].should      == { :type => 'Int64', :value => 9}           
+    entity[:fields]['BinaryData'].should    == { :type => 'Binary', :value => nil}            
+    entity[:fields]['SomeBoolean'].should   == { :type => 'Boolean', :value => true}            
+    entity[:fields]['SomeSingle'].should    == { :type => 'Single', :value => 9.3}                    
   end
 
   it "should get a set of entities" do
@@ -382,28 +425,28 @@ describe "tables service behavior" do
     entities[0][:row_key].should == 'myRowKey1'
     entities[0][:fields].length.should == 8
 
-    entities[0][:fields][0].should == { :name => 'PartitionKey', :type => 'String', :value => 'myPartitionKey'}
-    entities[0][:fields][1].should == { :name => 'RowKey', :type => 'String', :value => 'myRowKey1'}
-    entities[0][:fields][2].should == { :name => 'Timestamp', :type => 'DateTime', :value => '2008-10-01T15:26:04.6812774Z'}
-    entities[0][:fields][3].should == { :name => 'Address', :type => 'String', :value => '123 Lakeview Blvd, Redmond WA 98052'}    
-    entities[0][:fields][4].should == { :name => 'CustomerSince', :type => 'DateTime', :value => '2008-10-01T15:25:05.2852025Z'}
-    entities[0][:fields][5].should == { :name => 'Discount', :type => 'Double', :value => 10}
-    entities[0][:fields][6].should == { :name => 'Rating', :type => 'Int32', :value => 3}   
-    entities[0][:fields][7].should == { :name => 'BinaryData', :type => 'Binary', :value => nil}
+    entities[0][:fields]['PartitionKey'].should   == { :type => 'String', :value => 'myPartitionKey'}    
+    entities[0][:fields]['RowKey'].should         == { :type => 'String', :value => 'myRowKey1'}        
+    entities[0][:fields]['Timestamp'].should      == { :type => 'DateTime', :value => '2008-10-01T15:26:04.6812774Z'}
+    entities[0][:fields]['Address'].should        == { :type => 'String', :value => '123 Lakeview Blvd, Redmond WA 98052'}    
+    entities[0][:fields]['CustomerSince'].should  == { :type => 'DateTime', :value => '2008-10-01T15:25:05.2852025Z'}
+    entities[0][:fields]['Discount'].should       == { :type => 'Double', :value => 10}
+    entities[0][:fields]['Rating'].should         == { :type => 'Int32', :value => 3}
+    entities[0][:fields]['BinaryData'].should     == { :type => 'Binary', :value => nil}
 
     entities[1][:table_name].should == 'Customers'
     entities[1][:partition_key].should == 'myPartitionKey'
     entities[1][:row_key].should == 'myRowKey2'
     entities[1][:fields].length.should == 8
 
-    entities[1][:fields][0].should == { :name => 'PartitionKey', :type => 'String', :value => 'myPartitionKey'}
-    entities[1][:fields][1].should == { :name => 'RowKey', :type => 'String', :value => 'myRowKey2'}
-    entities[1][:fields][2].should == { :name => 'Timestamp', :type => 'DateTime', :value => '2009-10-01T15:26:04.6812774Z'}
-    entities[1][:fields][3].should == { :name => 'Address', :type => 'String', :value => '234 Lakeview Blvd, Redmond WA 98052'}    
-    entities[1][:fields][4].should == { :name => 'CustomerSince', :type => 'DateTime', :value => '2009-10-01T15:25:05.2852025Z'}
-    entities[1][:fields][5].should == { :name => 'Discount', :type => 'Double', :value => 11}
-    entities[1][:fields][6].should == { :name => 'Rating', :type => 'Int32', :value => 4}   
-    entities[1][:fields][7].should == { :name => 'BinaryData', :type => 'Binary', :value => 'binary_data'}            
+    entities[1][:fields]['PartitionKey'].should   == { :type => 'String', :value => 'myPartitionKey'}    
+    entities[1][:fields]['RowKey'].should         == { :type => 'String', :value => 'myRowKey2'}        
+    entities[1][:fields]['Timestamp'].should      == { :type => 'DateTime', :value => '2009-10-01T15:26:04.6812774Z'}
+    entities[1][:fields]['Address'].should        == { :type => 'String', :value => '234 Lakeview Blvd, Redmond WA 98052'}    
+    entities[1][:fields]['CustomerSince'].should  == { :type => 'DateTime', :value => '2009-10-01T15:25:05.2852025Z'}
+    entities[1][:fields]['Discount'].should       == { :type => 'Double', :value => 11}
+    entities[1][:fields]['Rating'].should         == { :type => 'Int32', :value => 4}
+    entities[1][:fields]['BinaryData'].should     == { :type => 'Binary', :value => 'binary_data'}
   end
   
   it "should send the $top query parameter when calling the service with top option " do
@@ -532,5 +575,10 @@ describe "tables service behavior" do
   it "should throw when invalid table name is provided" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
     lambda { service.query_entity('9existing', 'foo') }.should raise_error(WAZ::Storage::InvalidParameterValue)
+  end
+  
+  it "should throw when invalid table name is provided" do
+    service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
+    lambda { service.update_entity('9existing', {}) }.should raise_error(WAZ::Storage::InvalidParameterValue)
   end
 end
