@@ -1,3 +1,5 @@
+require 'net/http'
+
 $:.unshift(File.dirname(__FILE__))
 require 'waz/storage/base'
 require 'waz/storage/core_service'
@@ -12,6 +14,18 @@ unless String.method_defined? :start_with?
     def start_with?(prefix)
       prefix = prefix.to_s
       self[0, prefix.length] == prefix
+    end
+  end
+end
+
+# The Merge method is not defined in the RFC 2616 
+# and it's required to Merge entities in Windows Azure
+module Net
+  class HTTP < Protocol
+    class Merge < HTTPRequest
+      METHOD = 'MERGE'
+      REQUEST_HAS_BODY  = true
+      RESPONSE_HAS_BODY = false
     end
   end
 end

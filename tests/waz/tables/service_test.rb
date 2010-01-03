@@ -168,9 +168,8 @@ describe "tables service behavior" do
                              "<d:CustomerSince m:type=\"Edm.DateTime\">#{Time.now.utc.iso8601}</d:CustomerSince>" \
                              "<d:IsActive m:type=\"Edm.Boolean\">true</d:IsActive>" \
                              "<d:NumOfOrders m:type=\"Edm.Int64\">255</d:NumOfOrders>" \
-                             "<d:PartitionKey>myPartitionKey</d:PartitionKey>" \
-                             "<d:RowKey>myRowKey1</d:RowKey>" \
-                             "<d:Timestamp m:type=\"Edm.DateTime\">#{Time.now.utc.iso8601}</d:Timestamp>" \
+                             "<d:PartitionKey m:type=\"Edm.String\">myPartitionKey</d:PartitionKey>" \
+                             "<d:RowKey m:type=\"Edm.String\">myRowKey1</d:RowKey>" \
                        "</m:properties></content></entry>"
                        
     expected_headers = {'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}    
@@ -188,12 +187,14 @@ describe "tables service behavior" do
               'CustomerCode' => { :type => 'Guid', :value => 'c9da6455-213d-42c9-9a79-3e9149a57833'},
               'CustomerSince' =>{ :type => 'DateTime', :value => Time.now.utc.iso8601},
               'IsActive' =>{ :type => 'Boolean', :value => true},
+              'PartitionKey' =>{ :type => 'String', :value => 'myPartitionKey'},
+              'RowKey' =>{ :type => 'String', :value => 'myRowKey1'},
               'NumOfOrders' => {:type => 'Int64', :value => 255}}
               
     entity = { :partition_key => 'myPartitionKey', :row_key => 'myRowKey1', :fields =>  fields }
     new_entity = service.insert_entity('Customers', entity)
     
-    new_entity[:fields].length.should == 11
+    new_entity[:fields].length.should == 10
   end
   
   it "should update an existing entity" do
@@ -212,8 +213,8 @@ describe "tables service behavior" do
                              "<d:CustomerSince m:type=\"Edm.DateTime\">#{Time.now.utc.iso8601}</d:CustomerSince>" \
                              "<d:IsActive m:type=\"Edm.Boolean\">true</d:IsActive>" \
                              "<d:NumOfOrders m:type=\"Edm.Int64\">255</d:NumOfOrders>" \
-                             "<d:PartitionKey>myPartitionKey</d:PartitionKey>" \
-                             "<d:RowKey>myRowKey1</d:RowKey>" \
+                             "<d:PartitionKey m:type=\"Edm.String\">myPartitionKey</d:PartitionKey>" \
+                             "<d:RowKey m:type=\"Edm.String\">myRowKey1</d:RowKey>" \
                              "<d:Timestamp m:type=\"Edm.DateTime\">#{Time.now.utc.iso8601}</d:Timestamp>" \
                        "</m:properties></content></entry>"                       
     expected_headers = {'If-Match' => '*', 'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}    
@@ -221,7 +222,7 @@ describe "tables service behavior" do
     RestClient::Request.any_instance.expects(:execute).returns(expected_payload)
     service.expects(:generate_request_uri).with("Customers").returns("http://localhost/Customers")
     service.expects(:generate_request_uri).with("Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", {}).returns("http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')")
-    service.expects(:generate_request).with(:put, "http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", expected_headers , expected_payload).returns(RestClient::Request.new(:method => :post, :url => "http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", :headers => expected_headers, :payload => expected_payload))
+    service.expects(:generate_request).with(:put, "http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", expected_headers , expected_payload).returns(RestClient::Request.new(:method => :put, :url => "http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", :headers => expected_headers, :payload => expected_payload))
 
     fields = {'Address' => { :type => 'String', :value => 'Mountain View'},
               'Age' => { :type => 'Int32', :value => 23},
@@ -230,11 +231,58 @@ describe "tables service behavior" do
               'CustomerCode' => { :type => 'Guid', :value => 'c9da6455-213d-42c9-9a79-3e9149a57833'},
               'CustomerSince' =>{ :type => 'DateTime', :value => Time.now.utc.iso8601},
               'IsActive' =>{ :type => 'Boolean', :value => true},
-              'NumOfOrders' => {:type => 'Int64', :value => 255}}
+              'NumOfOrders' => {:type => 'Int64', :value => 255},
+              'PartitionKey' => { :type => 'String', :value => 'myPartitionKey'},
+              'RowKey' => { :type => 'String', :value => 'myRowKey1'},
+              'Timestamp' => {:type => 'DateTime', :value => Time.now.utc.iso8601 }}
 
     entity = { :partition_key => 'myPartitionKey', :row_key => 'myRowKey1', :fields =>  fields }
     updated_entity = service.update_entity('Customers', entity)
     updated_entity[:fields].length.should == 11
+  end
+
+  it "should merge an existing entity" do
+    service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")
+    expected_payload = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>" \
+                       "<entry xmlns:d=\"http://schemas.microsoft.com/ado/2007/08/dataservices\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\" xmlns=\"http://www.w3.org/2005/Atom\">" \
+                       "<id>http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')</id>" \
+                       "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"Customers\" href=\"Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')\" />" \
+                       "<content type=\"application/xml\">" \
+                       "<m:properties>" \
+                             "<d:Address m:type=\"Edm.String\">Mountain View</d:Address>" \
+                             "<d:Age m:type=\"Edm.Int32\">23</d:Age>" \
+                             "<d:AmountDue m:type=\"Edm.Double\">200.23</d:AmountDue>" \
+                             "<d:BinaryData m:type=\"Edm.Binary\" m:null=\"true\" />" \
+                             "<d:CustomerCode m:type=\"Edm.Guid\">c9da6455-213d-42c9-9a79-3e9149a57833</d:CustomerCode>" \
+                             "<d:CustomerSince m:type=\"Edm.DateTime\">#{Time.now.utc.iso8601}</d:CustomerSince>" \
+                             "<d:IsActive m:type=\"Edm.Boolean\">true</d:IsActive>" \
+                             "<d:NumOfOrders m:type=\"Edm.Int64\">255</d:NumOfOrders>" \
+                             "<d:PartitionKey m:type=\"Edm.String\">myPartitionKey</d:PartitionKey>" \
+                             "<d:RowKey m:type=\"Edm.String\">myRowKey1</d:RowKey>" \
+                             "<d:Timestamp m:type=\"Edm.DateTime\">#{Time.now.utc.iso8601}</d:Timestamp>" \
+                       "</m:properties></content></entry>"                       
+    expected_headers = {'If-Match' => '*', 'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}    
+    
+    RestClient::Request.any_instance.expects(:execute).returns(expected_payload)
+    service.expects(:generate_request_uri).with("Customers").returns("http://localhost/Customers")
+    service.expects(:generate_request_uri).with("Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", {}).returns("http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')")
+    service.expects(:generate_request).with(:merge, "http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", expected_headers , expected_payload).returns(RestClient::Request.new(:method => :merge, :url => "http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", :headers => expected_headers, :payload => expected_payload))
+
+    fields = {'Address' => { :type => 'String', :value => 'Mountain View'},
+              'Age' => { :type => 'Int32', :value => 23},
+              'AmountDue' => { :type => 'Double', :value => 200.23},
+              'BinaryData' => { :type => 'Binary', :value => nil},
+              'CustomerCode' => { :type => 'Guid', :value => 'c9da6455-213d-42c9-9a79-3e9149a57833'},
+              'CustomerSince' =>{ :type => 'DateTime', :value => Time.now.utc.iso8601},
+              'IsActive' =>{ :type => 'Boolean', :value => true},
+              'NumOfOrders' => {:type => 'Int64', :value => 255},
+              'PartitionKey' => { :type => 'String', :value => 'myPartitionKey'},
+              'RowKey' => { :type => 'String', :value => 'myRowKey1'},
+              'Timestamp' => {:type => 'DateTime', :value => Time.now.utc.iso8601 }}
+
+    entity = { :partition_key => 'myPartitionKey', :row_key => 'myRowKey1', :fields =>  fields }
+    merge_entity = service.merge_entity('Customers', entity)
+    merge_entity[:fields].length.should == 11
   end
   
   it "should throw TooManyProperties exception" do 
@@ -580,5 +628,10 @@ describe "tables service behavior" do
   it "should throw when invalid table name is provided" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
     lambda { service.update_entity('9existing', {}) }.should raise_error(WAZ::Storage::InvalidParameterValue)
+  end
+  
+  it "should throw when invalid table name is provided" do
+    service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
+    lambda { service.merge_entity('9existing', {}) }.should raise_error(WAZ::Storage::InvalidParameterValue)
   end
 end

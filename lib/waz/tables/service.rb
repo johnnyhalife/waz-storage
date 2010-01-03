@@ -68,7 +68,7 @@ module WAZ
         raise WAZ::Tables::TooManyProperties, entity[:fields].length if entity[:fields].length > 252 
         
         begin
-          parse_entity execute :post, table_name, {}, { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, generate_payload(table_name, entity)
+          parse_entity execute :post, table_name, {}, { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, generate_payload(table_name, entity)          
         rescue RestClient::RequestFailed          
           raise WAZ::Tables::EntityAlreadyExists, entity[:row_key] if $!.http_code == 409 and $!.response.body.include?('EntityAlreadyExists')          
         end     
@@ -78,13 +78,17 @@ module WAZ
       # TODO: handle specific errors
       def update_entity(table_name, entity)
         raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
-        
-        begin
-          parse_entity execute :put, "#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')", {}, { 'If-Match' => '*', 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' },  generate_payload(table_name, entity)
-        rescue
-          puts $!
-        end
-      end    
+        parse_entity execute :put, "#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')", {}, { 'If-Match' => '*', 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, generate_payload(table_name, entity)
+      end
+      
+      # Merge an existing entity on the current storage account.
+      # The Merge Entity operation updates an existing entity by updating the entity's properties. 
+      # This operation does not replace the existing entity, as the Update Entity operation does
+      # TODO: handle specific errors
+      def merge_entity(table_name, entity)
+        raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+        parse_entity execute :merge, "#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')", {}, { 'If-Match' => '*', 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, generate_payload(table_name, entity)
+      end
       
       # Delete an existing entity in a table.
       def delete_entity(table_name, partition_key, row_key)
@@ -102,36 +106,27 @@ module WAZ
       # TODO: handle specific errors
       def get_entity(table_name, partition_key, row_key)
         raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
-        
-        begin
-          parse_entity execute :get, "#{table_name}(PartitionKey='#{partition_key}',RowKey='#{row_key}')", {}, { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
-        rescue
-          puts $!
-        end
+        parse_entity execute :get, "#{table_name}(PartitionKey='#{partition_key}',RowKey='#{row_key}')", {}, { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
       end    
       
       # Retrieves a set of entities on the current storage account for a given query.
       # When the :top => n is passed it returns only the first n rows that match with the query
       # TODO: handle specific errors
-      def query_entity(table_name, expression, top = nil)
+      def query_entity(table_name, expression = nil, top = nil)
         raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+        entities, next_partition_key, next_row_key = [], nil, nil
         begin
-          entities, next_partition_key, next_row_key = [], nil, nil
-          begin
-            query = {'$filter' => expression }
-            query.merge!({ '$top' => top }) unless top.nil?
-            query.merge!({ 'NextPartitionKey' => next_partition_key, 'NextRowKey' => next_row_key }) unless (next_partition_key.nil? and next_row_key.nil?)
-            headers = { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
-            response = execute :get, "#{table_name}()", query, headers
-            next_partition_key, next_row_key  = response.headers[:x_ms_continuation_nextpartitionkey], response.headers[:x_ms_continuation_nextrowkey]
-            entities << parse_entity(response)
-            entities.flatten!
-            break if (!top.nil? and entities.length == top)
-          end while (!next_partition_key.nil? and !next_row_key.nil?)
-          return entities
-        rescue
-          puts $!
-        end
+          query = {'$filter' => (expression or '') }
+          query.merge!({ '$top' => top }) unless top.nil?
+          query.merge!({ 'NextPartitionKey' => next_partition_key, 'NextRowKey' => next_row_key }) unless (next_partition_key.nil? and next_row_key.nil?)
+          headers = { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
+          response = execute :get, "#{table_name}()", query, headers
+          next_partition_key, next_row_key  = response.headers[:x_ms_continuation_nextpartitionkey], response.headers[:x_ms_continuation_nextrowkey]
+          entities << parse_entity(response)
+          entities.flatten!
+          break if (!top.nil? and entities.length == top)
+        end while (!next_partition_key.nil? and !next_row_key.nil?)
+        return entities
       end
 
       private 
@@ -139,16 +134,14 @@ module WAZ
           payload = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>" \
                      "<entry xmlns:d=\"http://schemas.microsoft.com/ado/2007/08/dataservices\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\" xmlns=\"http://www.w3.org/2005/Atom\">" \
                      "<id>#{generate_request_uri "#{table_name}"}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')</id>" \
-                     "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"#{table_name}\" href=\"#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')\" /><content type=\"application/xml\"><m:properties>"
+                     "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"#{table_name}\" href=\"#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')\" />" \
+                     "<content type=\"application/xml\"><m:properties>"
 
           entity[:fields].sort_by { |k| k }.each { |k,v| payload << (!v[:value].nil? ? "<d:#{k} m:type=\"Edm.#{v[:type]}\">#{v[:value].to_s}</d:#{k}>" : "<d:#{k} m:type=\"Edm.#{v[:type]}\" m:null=\"true\" />") }          
 
           payload << "<d:PartitionKey>#{entity[:partition_key]}</d:PartitionKey>" unless entity[:fields].keys.include?('PartitionKey') 
-          payload << "<d:RowKey>#{entity[:row_key]}</d:RowKey>"  unless entity[:fields].keys.include?('RowKey') 
-          payload << "<d:Timestamp m:type=\"Edm.DateTime\">#{Time.now.utc.iso8601}</d:Timestamp>" unless entity[:fields].keys.include?('TimeStamp')
+          payload << "<d:RowKey>#{entity[:row_key]}</d:RowKey>" unless entity[:fields].keys.include?('RowKey') 
           payload << "</m:properties></content></entry>"
-          file = File.open '/Users/jpgarcia/Desktop/text.xml', 'w'
-          file.write payload 
           return payload
         end
 

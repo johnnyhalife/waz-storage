@@ -2,6 +2,8 @@
 v0.5.8 - (unreleased)
 -Added signature support for Tables service since it differs slightly from that for a request against the Blob or Queue services, according to msdn.microsoft.com/en-us/library/dd179428.aspx
 -Added Table operations to enumerate the tables in a storage account, create a new table, and delete an existing table.
+-Added Query operations on Table service to query, get_one, update, delete, insert entities.
+-Added support for running against the storage development fabriq.
 -Fixed an issue on the Queues Documentation (thanks @ezequielm)
 -Added _naming validation for Containers_ according to msdn.microsoft.com/en-us/library/dd135715.aspx (thanks @panosjee)
 -Added _naming validation for Queues_ according to msdn.microsoft.com/en-us/library/dd179349.aspx (thanks @panosjee)
