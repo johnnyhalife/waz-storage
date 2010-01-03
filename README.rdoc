@@ -147,6 +147,45 @@ Azure Tables REST API isn't fully covered here (see TODO's for more information)
 	
 	# delete a table
 	my_table.destroy!
+	
+	# Entity operations using the Table service
+
+	# get the existing service instance
+    service = WAZ::Tables::Table.service_instance
+
+	# define a new entity with its fields
+	fields = {'Address' => { :type => 'String', :value => 'Mountain View'},
+	          'Age' => { :type => 'Int32', :value => 23},
+	          'AmountDue' => { :type => 'Double', :value => 200.23},
+	          'BinaryData' => { :type => 'Binary', :value => nil},
+	          'CustomerCode' => { :type => 'Guid', :value => 'c9da6455-213d-42c9-9a79-3e9149a57833'},
+	          'CustomerSince' =>{ :type => 'DateTime', :value => Time.now.utc.iso8601},
+	          'IsActive' =>{ :type => 'Boolean', :value => true},
+	          'NumOfOrders' => {:type => 'Int64', :value => 255}}                    
+	 entity = { :partition_key => 'customer', :row_key => 'rowKey1 , :fields =>  fields }    
+
+	# inserts a new entity
+	service.insert_entity 'customer_table', entity
+	
+	# retrieves all entities from a table
+    entities = service.query_entity('customer_table')
+
+	# retrieves all records that match with the specified query but only the first fifteen rows
+	service.query_entity('customer_table', "(PartitionKey eq 'customer') and (Age eq 23)", 15)
+
+    # gets an existing entity by its partion_key and row_key
+    entity = service.get_entity('customer_table', 'customer', 'rowKey1')
+
+    # updates an entity
+    entity[:fields]['Age'][:value] = 90
+    service.update_entity('customer_table', new_entity)
+
+    # merges an entity (more details here: http://msdn.microsoft.com/en-us/library/dd179392.aspx)
+    entity[:fields]['Age'][:value] = 20
+    service.update_entity('customer_table', new_entity)
+
+	# deletes an entity
+	service.delete_entity('customer_table', 'customer', 'rowKey1')
 
 It's pretty intuitive, but full documentation (RDoc) is available for the API for further reference.
 
@@ -179,7 +218,6 @@ As far as users start using it, I'll be building a backlog and probably handling
 TODO's already enqueued for further releases of the waz-storage API.
 
 - Implement the remaining features of Blobs (Blocks Management)
-- Implement Tables API (Entities).
 - Generate a sample application to better show the usage.
 
 The things listed above do not represent any sort of priority, or the order they are going to be tackled. It's just a list. 
