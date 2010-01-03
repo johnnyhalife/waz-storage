@@ -108,13 +108,13 @@ describe "tables service behavior" do
   end
   
   it "should create a table" do
-    expected_payload = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><entry xmlns:d=\"http://schemas.microsoft.com/ado/2007/08/dataservices\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\" xmlns=\"http://www.w3.org/2005/Atom\"><title /><updated>#{Time.now.utc.iso8601}</updated><author><name/></author><id/><content type=\"application/xml\"><m:properties><d:TableName>mocktable</d:TableName></m:properties></content></entry>"
+    expected_payload = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><entry xmlns:d=\"http://schemas.microsoft.com/ado/2007/08/dataservices\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\" xmlns=\"http://www.w3.org/2005/Atom\"><title /><updated>#{Time.now.utc.iso8601}</updated><author><name/></author><id/><content type=\"application/xml\"><m:properties><d:TableName>Customers</d:TableName></m:properties></content></entry>"
     expected_headers = { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }    
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute)
     service.expects(:generate_request_uri).with("Tables", {}).returns("http://localhost/Tables")
     service.expects(:generate_request).with(:post, "http://localhost/Tables", expected_headers, expected_payload).returns(RestClient::Request.new(:method => :post, :url => "http://localhost/Tables", :headers => expected_headers, :payload => expected_payload))
-    service.create_table('mocktable')
+    service.create_table('Customers')
   end
     
   it "should throw when a table already exists" do
@@ -156,8 +156,8 @@ describe "tables service behavior" do
   it "should insert a new entity" do
     expected_payload = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>" \
                        "<entry xmlns:d=\"http://schemas.microsoft.com/ado/2007/08/dataservices\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\" xmlns=\"http://www.w3.org/2005/Atom\">" \
-                       "<id>https://table.localhost/mocktable(PartitionKey='mypartitionkey',RowKey='myrowkey1')</id>" \
-                       "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"mocktable\" href=\"mocktable(PartitionKey='mypartitionkey',RowKey='myrowkey1')\" />" \
+                       "<id>https://table.localhost/Customers(PartitionKey='mypartitionkey',RowKey='myrowkey1')</id>" \
+                       "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"Customers\" href=\"Customers(PartitionKey='mypartitionkey',RowKey='myrowkey1')\" />" \
                        "<content type=\"application/xml\">" \
                        "<m:properties>" \
                              "<d:Address m:type=\"Edm.String\">Mountain View</d:Address>" \
@@ -176,9 +176,9 @@ describe "tables service behavior" do
     expected_headers = {'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}    
 
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")
-    RestClient::Request.any_instance.expects(:execute).returns(mock())
-    service.expects(:generate_request_uri).with("mocktable", {}).returns("http://localhost/mocktable")
-    service.expects(:generate_request).with(:post, "http://localhost/mocktable", expected_headers , expected_payload).returns(RestClient::Request.new(:method => :post, :url => "http://localhost/mocktable", :headers => expected_headers, :payload => expected_payload))
+    RestClient::Request.any_instance.expects(:execute).returns(expected_payload)
+    service.expects(:generate_request_uri).with("Customers", {}).returns("http://localhost/Customers")
+    service.expects(:generate_request).with(:post, "http://localhost/Customers", expected_headers , expected_payload).returns(RestClient::Request.new(:method => :post, :url => "http://localhost/Customers", :headers => expected_headers, :payload => expected_payload))
 
     fields = []
     fields << { :name => 'Address', :type => 'String', :value => 'Mountain View'}
@@ -188,11 +188,11 @@ describe "tables service behavior" do
     fields << { :name => 'CustomerCode', :type => 'Guid', :value => 'c9da6455-213d-42c9-9a79-3e9149a57833'}            
     fields << { :name => 'CustomerSince', :type => 'DateTime', :value => Time.now.utc.iso8601}
     fields << { :name => 'IsActive', :type => 'Boolean', :value => true}
-    fields << { :name => 'NumOfOrders', :type => 'Int64', :value => 255}    
-
+    fields << { :name => 'NumOfOrders', :type => 'Int64', :value => 255}
     entity = { :partition_key => 'mypartitionkey', :row_key => 'myrowkey1', :fields =>  fields }
-
-    service.insert_entity('mocktable', entity)
+    new_entity = service.insert_entity('Customers', entity)
+    
+    new_entity[:fields].length.should == 11
   end
   
   it "should throw TooManyProperties exception" do 
@@ -200,7 +200,7 @@ describe "tables service behavior" do
     253.times { |i| fields << { :name => 'test' + i.to_s, :type => 'String', :value => i.to_s} }
     entity = { :partition_key => 'mypartitionkey', :row_key => 'myrowkey1', :fields =>  fields }
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")       
-    lambda {service.insert_entity('mocktable', entity)}.should raise_error(WAZ::Tables::TooManyProperties, "The entity contains more properties than allowed (252). The entity has 253 properties.")        
+    lambda {service.insert_entity('Customers', entity)}.should raise_error(WAZ::Tables::TooManyProperties, "The entity contains more properties than allowed (252). The entity has 253 properties.")        
   end
 
   it "should throw EntityAlreadyExists exception" do 
@@ -215,16 +215,16 @@ describe "tables service behavior" do
 
     RestClient::Request.any_instance.expects(:execute).raises(request_failed)    
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")       
-    lambda {service.insert_entity('mocktable', entity)}.should raise_error(WAZ::Tables::EntityAlreadyExists, "The specified entity already exists. RowKey: myrowkey1")
+    lambda {service.insert_entity('Customers', entity)}.should raise_error(WAZ::Tables::EntityAlreadyExists, "The specified entity already exists. RowKey: myrowkey1")
   end
   
   it "should delete an existing entity" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute).returns(mock())
     expected_headers = {'If-Match' => '*', 'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}
-    service.expects(:generate_request_uri).with("mocktable(PartitionKey='myPartitionKey',RowKey='myRowKey1')", {}).returns("http://localhost/mocktable(PartitionKey='myPartitionKey',RowKey='myRowKey1'")
-    service.expects(:generate_request).with(:delete, "http://localhost/mocktable(PartitionKey='myPartitionKey',RowKey='myRowKey1'", expected_headers, nil).returns(RestClient::Request.new(:method => :post, :url => "http://localhost/mocktable(PartitionKey='myPartitionKey',RowKey='myRowKey1'", :headers => expected_headers))
-    service.delete_entity('mocktable', 'myPartitionKey', 'myRowKey1')
+    service.expects(:generate_request_uri).with("Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", {}).returns("http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1'")
+    service.expects(:generate_request).with(:delete, "http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1'", expected_headers, nil).returns(RestClient::Request.new(:method => :post, :url => "http://localhost/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1'", :headers => expected_headers))
+    service.delete_entity('Customers', 'myPartitionKey', 'myRowKey1')
   end
   
   it "should throw when trying to delete and entity and the table does not exists" do
@@ -255,15 +255,80 @@ describe "tables service behavior" do
   
   it "should get an entity by a given partitionkey and rowkey" do
     mock_response = <<-eom
-    <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-    <entry xml:base="http://wazstoragejohnny.table.core.windows.net/" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" m:etag="W/&quot;datetime'2010-01-01T15%3A50%3A49.9612116Z'&quot;" xmlns="http://www.w3.org/2005/Atom">
-        <id>http://myaccount.tables.core.windows.net/mocktable(PartitionKey='myPartitionKey',RowKey='myRowKey1')</id>
+    <?xml version="1.0" encoding="utf-8" standalone="yes"?>    
+    <entry xml:base="http://myaccount.tables.core.windows.net/" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" m:etag="W/&quot;datetime'2010-01-01T15%3A50%3A49.9612116Z'&quot;" xmlns="http://www.w3.org/2005/Atom">
+        <id>http://myaccount.tables.core.windows.net/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')</id>
         <title type="text"></title>
         <updated>2008-10-01T15:26:13Z</updated>
         <author>
           <name />
         </author>
-        <link rel="edit" title="mocktable" href="mocktable (PartitionKey='myPartitionKey',RowKey='myRowKey1')" />
+        <link rel="edit" title="Customers" href="Customers (PartitionKey='myPartitionKey',RowKey='myRowKey1')" />
+        <category term="myaccount.Customers" scheme="http://schemas.microsoft.com/ado/2007/08/dataservices/scheme" />
+        <content type="application/xml">
+          <m:properties>
+            <d:PartitionKey>myPartitionKey</d:PartitionKey>
+            <d:RowKey>myRowKey1</d:RowKey>
+            <d:Timestamp m:type="Edm.DateTime">2008-10-01T15:26:04.6812774Z</d:Timestamp>
+            <d:Address>123 Lakeview Blvd, Redmond WA 98052</d:Address>
+            <d:CustomerSince m:type="Edm.DateTime">2008-10-01T15:25:05.2852025Z</d:CustomerSince>
+            <d:Discount m:type="Edm.Double">10</d:Discount>
+            <d:Rating16 m:type="Edm.Int16">3</d:Rating16>
+            <d:Rating32 m:type="Edm.Int32">6</d:Rating32>
+            <d:Rating64 m:type="Edm.Int64">9</d:Rating64>            
+            <d:BinaryData m:type="Edm.Binary" m:null="true" />
+            <d:SomeBoolean m:type="Edm.Boolean">true</d:SomeBoolean>
+            <d:SomeSingle m:type="Edm.Single">9.3</d:SomeSingle>            
+          </m:properties>
+        </content>
+      </entry>
+    eom
+    expected_headers = {'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}    
+
+    service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")
+    RestClient::Request.any_instance.expects(:execute).returns(mock_response)
+    service.expects(:generate_request_uri).with("Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", {}).returns("http://myaccount.tables.core.windows.net/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')")
+    service.expects(:generate_request).with(:get, "http://myaccount.tables.core.windows.net/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", expected_headers, nil).returns(RestClient::Request.new(:method => :post, :url => "http://myaccount.tables.core.windows.net(PartitionKey='myPartitionKey',RowKey='myRowKey1')", :headers => expected_headers))
+
+    entity = service.get_entity('Customers', 'myPartitionKey', 'myRowKey1')
+
+    entity[:table_name].should == 'Customers'
+    entity[:partition_key].should == 'myPartitionKey'
+    entity[:row_key].should == 'myRowKey1'
+    entity[:fields].length.should == 12
+
+    entity[:fields][0].should == { :name => 'PartitionKey', :type => 'String', :value => 'myPartitionKey'}    
+    entity[:fields][1].should == { :name => 'RowKey', :type => 'String', :value => 'myRowKey1'}        
+    entity[:fields][2].should == { :name => 'Timestamp', :type => 'DateTime', :value => '2008-10-01T15:26:04.6812774Z'}
+    entity[:fields][3].should == { :name => 'Address', :type => 'String', :value => '123 Lakeview Blvd, Redmond WA 98052'}    
+    entity[:fields][4].should == { :name => 'CustomerSince', :type => 'DateTime', :value => '2008-10-01T15:25:05.2852025Z'}
+    entity[:fields][5].should == { :name => 'Discount', :type => 'Double', :value => 10}
+    entity[:fields][6].should == { :name => 'Rating16', :type => 'Int16', :value => 3}
+    entity[:fields][7].should == { :name => 'Rating32', :type => 'Int32', :value => 6}
+    entity[:fields][8].should == { :name => 'Rating64', :type => 'Int64', :value => 9}           
+    entity[:fields][9].should == { :name => 'BinaryData', :type => 'Binary', :value => nil}            
+    entity[:fields][10].should == { :name => 'SomeBoolean', :type => 'Boolean', :value => true}            
+    entity[:fields][11].should == { :name => 'SomeSingle', :type => 'Single', :value => 9.3}                    
+  end
+
+  it "should get a set of entities" do
+    service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "myaccount.tables.core.windows.net")    
+
+    mock_response = <<-eom
+    <?xml version="1.0" encoding="utf-8" standalone="yes"?>
+    <feed xml:base="http://myaccount.tables.core.windows.net/" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns="http://www.w3.org/2005/Atom">
+      <title type="text">Customers</title>
+      <id>http://myaccount.tables.core.windows.net/Customers</id>
+      <updated>2008-10-01T15:26:13Z</updated>
+      <link rel="self" title="Customers" href="Customers" />    
+      <entry xml:base="http://myaccount.tables.core.windows.net/" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" m:etag="W/&quot;datetime'2010-01-01T15%3A50%3A49.9612116Z'&quot;" xmlns="http://www.w3.org/2005/Atom">
+        <id>http://myaccount.tables.core.windows.net/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')</id>
+        <title type="text"></title>
+        <updated>2008-10-01T15:26:13Z</updated>
+        <author>
+          <name />
+        </author>
+        <link rel="edit" title="Customers" href="Customers (PartitionKey='myPartitionKey',RowKey='myRowKey1')" />
         <category term="myaccount.Customers" scheme="http://schemas.microsoft.com/ado/2007/08/dataservices/scheme" />
         <content type="application/xml">
           <m:properties>
@@ -278,28 +343,161 @@ describe "tables service behavior" do
           </m:properties>
         </content>
       </entry>
+      <entry xml:base="http://myaccount.tables.core.windows.net/" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" m:etag="W/&quot;datetime'2010-01-01T15%3A50%3A49.9612116Z'&quot;" xmlns="http://www.w3.org/2005/Atom">
+        <id>http://myaccount.tables.core.windows.net/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey2')</id>
+        <title type="text"></title>
+        <updated>2008-10-01T15:26:13Z</updated>
+        <author>
+          <name />
+        </author>
+        <link rel="edit" title="Customers" href="Customers (PartitionKey='myPartitionKey',RowKey='myRowKey2')" />
+        <category term="myaccount.Customers" scheme="http://schemas.microsoft.com/ado/2007/08/dataservices/scheme" />
+        <content type="application/xml">
+          <m:properties>
+            <d:PartitionKey>myPartitionKey</d:PartitionKey>
+            <d:RowKey>myRowKey2</d:RowKey>
+            <d:Timestamp m:type="Edm.DateTime">2009-10-01T15:26:04.6812774Z</d:Timestamp>
+            <d:Address>234 Lakeview Blvd, Redmond WA 98052</d:Address>
+            <d:CustomerSince m:type="Edm.DateTime">2009-10-01T15:25:05.2852025Z</d:CustomerSince>
+            <d:Discount m:type="Edm.Double">11</d:Discount>
+            <d:Rating m:type="Edm.Int32">4</d:Rating>
+            <d:BinaryData m:type="Edm.Binary">binary_data</d:BinaryData>
+          </m:properties>
+        </content>
+      </entry>      
+    </feed>  
     eom
+    mock_response.stubs(:headers).returns({})            
+    expected_headers = {'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}    
+    expected_query = { '$filter' => "expression" }
+
+    RestClient::Request.any_instance.expects(:execute).once().returns(mock_response)
+    service.expects(:generate_request_uri).with("Customers()", expected_query).returns("http://myaccount.tables.core.windows.net/Customers()?$filter=expression")
+    service.expects(:generate_request).with(:get, "http://myaccount.tables.core.windows.net/Customers()?$filter=expression", expected_headers, nil).returns(RestClient::Request.new(:method => :post, :url => "http://myaccount.tables.core.windows.net/Customers()?$filter=expression", :headers => expected_headers))
+    entities = service.query_entity('Customers', 'expression')
+
+    entities.length.should == 2
+    entities[0][:table_name].should == 'Customers'
+    entities[0][:partition_key].should == 'myPartitionKey'
+    entities[0][:row_key].should == 'myRowKey1'
+    entities[0][:fields].length.should == 8
+
+    entities[0][:fields][0].should == { :name => 'PartitionKey', :type => 'String', :value => 'myPartitionKey'}
+    entities[0][:fields][1].should == { :name => 'RowKey', :type => 'String', :value => 'myRowKey1'}
+    entities[0][:fields][2].should == { :name => 'Timestamp', :type => 'DateTime', :value => '2008-10-01T15:26:04.6812774Z'}
+    entities[0][:fields][3].should == { :name => 'Address', :type => 'String', :value => '123 Lakeview Blvd, Redmond WA 98052'}    
+    entities[0][:fields][4].should == { :name => 'CustomerSince', :type => 'DateTime', :value => '2008-10-01T15:25:05.2852025Z'}
+    entities[0][:fields][5].should == { :name => 'Discount', :type => 'Double', :value => 10}
+    entities[0][:fields][6].should == { :name => 'Rating', :type => 'Int32', :value => 3}   
+    entities[0][:fields][7].should == { :name => 'BinaryData', :type => 'Binary', :value => nil}
+
+    entities[1][:table_name].should == 'Customers'
+    entities[1][:partition_key].should == 'myPartitionKey'
+    entities[1][:row_key].should == 'myRowKey2'
+    entities[1][:fields].length.should == 8
+
+    entities[1][:fields][0].should == { :name => 'PartitionKey', :type => 'String', :value => 'myPartitionKey'}
+    entities[1][:fields][1].should == { :name => 'RowKey', :type => 'String', :value => 'myRowKey2'}
+    entities[1][:fields][2].should == { :name => 'Timestamp', :type => 'DateTime', :value => '2009-10-01T15:26:04.6812774Z'}
+    entities[1][:fields][3].should == { :name => 'Address', :type => 'String', :value => '234 Lakeview Blvd, Redmond WA 98052'}    
+    entities[1][:fields][4].should == { :name => 'CustomerSince', :type => 'DateTime', :value => '2009-10-01T15:25:05.2852025Z'}
+    entities[1][:fields][5].should == { :name => 'Discount', :type => 'Double', :value => 11}
+    entities[1][:fields][6].should == { :name => 'Rating', :type => 'Int32', :value => 4}   
+    entities[1][:fields][7].should == { :name => 'BinaryData', :type => 'Binary', :value => 'binary_data'}            
+  end
+  
+  it "should send the $top query parameter when calling the service with top option " do
+    service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "myaccount.tables.core.windows.net")    
+    mock_response = <<-eom
+    <?xml version="1.0" encoding="utf-8" standalone="yes"?>
+    <feed xml:base="http://myaccount.tables.core.windows.net/" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns="http://www.w3.org/2005/Atom">
+      <title type="text">Customers</title>
+      <id>http://myaccount.tables.core.windows.net/Customers</id>
+      <updated>2008-10-01T15:26:13Z</updated>
+      <link rel="self" title="Customers" href="Customers" />    
+      <entry xml:base="http://myaccount.tables.core.windows.net/" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" m:etag="W/&quot;datetime'2010-01-01T15%3A50%3A49.9612116Z'&quot;" xmlns="http://www.w3.org/2005/Atom">
+        <id>http://myaccount.tables.core.windows.net/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')</id>
+        <title type="text"></title>
+        <updated>2008-10-01T15:26:13Z</updated>
+        <author>
+          <name />
+        </author>
+        <link rel="edit" title="Customers" href="Customers (PartitionKey='myPartitionKey',RowKey='myRowKey1')" />
+        <category term="myaccount.Customers" scheme="http://schemas.microsoft.com/ado/2007/08/dataservices/scheme" />
+        <content type="application/xml">
+          <m:properties>
+            <d:PartitionKey>myPartitionKey</d:PartitionKey>
+            <d:RowKey>myRowKey1</d:RowKey>
+            <d:Rating m:type="Edm.Int32">3</d:Rating>
+          </m:properties>
+        </content>
+      </entry>
+    </feed>  
+    eom
+    mock_response.stubs(:headers).returns({})        
+    
+    expected_headers = {'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}    
+    expected_query = { '$filter' => "expression", '$top' => 1 }
+
+    RestClient::Request.any_instance.expects(:execute).once().returns(mock_response)
+    service.expects(:generate_request_uri).once().with("Customers()", expected_query).returns("http://myaccount.tables.core.windows.net/Customers()?$filter=expression&$top=1")
+    service.expects(:generate_request).once().with(:get, "http://myaccount.tables.core.windows.net/Customers()?$filter=expression&$top=1", expected_headers, nil).returns(RestClient::Request.new(:method => :post, :url => "http://myaccount.tables.core.windows.net/Customers()?$filter=expression&$top=1", :headers => expected_headers))
+    entities = service.query_entity('Customers', 'expression', 1)
+
+    entities.length.should == 1
+  end
+  
+  it "should call execute method recursively when there are continuation token headers" do
+    service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "myaccount.tables.core.windows.net")
+    sample_feed = <<-eom
+    <?xml version="1.0" encoding="utf-8" standalone="yes"?>
+    <feed xml:base="http://myaccount.tables.core.windows.net/" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns="http://www.w3.org/2005/Atom">
+      <title type="text">Customers</title>
+      <id>http://myaccount.tables.core.windows.net/Customers</id>
+      <updated>2008-10-01T15:26:13Z</updated>
+      <link rel="self" title="Customers" href="Customers" />    
+      <entry xml:base="http://myaccount.tables.core.windows.net/" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" m:etag="W/&quot;datetime'2010-01-01T15%3A50%3A49.9612116Z'&quot;" xmlns="http://www.w3.org/2005/Atom">
+        <id>http://myaccount.tables.core.windows.net/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')</id>
+        <title type="text"></title>
+        <updated>2008-10-01T15:26:13Z</updated>
+        <author>
+          <name />
+        </author>
+        <link rel="edit" title="Customers" href="Customers (PartitionKey='myPartitionKey',RowKey='myRowKey1')" />
+        <category term="myaccount.Customers" scheme="http://schemas.microsoft.com/ado/2007/08/dataservices/scheme" />
+        <content type="application/xml">
+          <m:properties>
+            <d:PartitionKey>myPartitionKey</d:PartitionKey>
+            <d:RowKey>myRowKey1</d:RowKey>
+            <d:Rating m:type="Edm.Int32">3</d:Rating>
+          </m:properties>
+        </content>
+      </entry>
+    </feed>  
+    eom
+    mock_response1, mock_response2 = sample_feed
+    mock_response1.stubs(:headers).returns({:x_ms_continuation_nextpartitionkey => 'next_partition_key', :x_ms_continuation_nextrowkey => 'next_row_key'})    
+    mock_response2.stubs(:headers).returns({})    
+    
     expected_headers = {'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}    
 
-    service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")
-    RestClient::Request.any_instance.expects(:execute).returns(mock_response)
-    service.expects(:generate_request_uri).with("mocktable(PartitionKey='myPartitionKey',RowKey='myRowKey1')", {}).returns("http://localhost/mocktable(PartitionKey='myPartitionKey',RowKey='myRowKey1'")
-    service.expects(:generate_request).with(:get, "http://localhost/mocktable(PartitionKey='myPartitionKey',RowKey='myRowKey1'", expected_headers, nil).returns(RestClient::Request.new(:method => :post, :url => "http://localhost/mocktable(PartitionKey='myPartitionKey',RowKey='myRowKey1'", :headers => expected_headers))
+    expected_query1 = { '$filter' => "expression" }    
+    expected_query2 = { 'NextRowKey' => 'next_row_key', '$filter' => "expression", 'NextPartitionKey' => 'next_partition_key' }
 
-    entity = service.get_entity('mocktable', 'myPartitionKey', 'myRowKey1')
-    
-    entity[:table_name].should == 'mocktable'
-    entity[:partition_key].should == 'myPartitionKey'
-    entity[:row_key].should == 'myRowKey1'
-    entity[:fields].length.should == 6
+    rest_client1 = RestClient::Request.new(:method => :post, :url => "http://myaccount.tables.core.windows.net/Customers()?$filter=expression", :headers => expected_headers)
+    rest_client1.expects(:execute).once().returns(mock_response1)
 
-    entity[:fields][0].should == { :name => 'Timestamp', :type => 'DateTime', :value => '2008-10-01T15:26:04.6812774Z'}
-    entity[:fields][1].should == { :name => 'Address', :type => 'String', :value => '123 Lakeview Blvd, Redmond WA 98052'}    
-    entity[:fields][2].should == { :name => 'CustomerSince', :type => 'DateTime', :value => '2008-10-01T15:25:05.2852025Z'}
-    entity[:fields][3].should == { :name => 'Discount', :type => 'Double', :value => 10}
-    entity[:fields][4].should == { :name => 'Rating', :type => 'Int32', :value => 3}   
-    entity[:fields][5].should == { :name => 'BinaryData', :type => 'Binary', :value => nil}            
-  end
+    rest_client2 = RestClient::Request.new(:method => :post, :url => "http://myaccount.tables.core.windows.net/Customers()?$filter=expression&NextPartitionKey=next_partition_key&NextRowKey=next_row_key", :headers => expected_headers)
+    rest_client2.expects(:execute).once().returns(mock_response2)
+
+    service.expects(:generate_request_uri).with("Customers()", expected_query1).returns("http://myaccount.tables.core.windows.net/Customers()?$filter=expression")
+    service.expects(:generate_request_uri).with("Customers()", expected_query2).returns("http://myaccount.tables.core.windows.net/Customers()?$filter=expression&NextPartitionKey=next_partition_key&NextRowKey=next_row_key")
+    service.expects(:generate_request).once().with(:get, "http://myaccount.tables.core.windows.net/Customers()?$filter=expression", expected_headers, nil).returns(rest_client1)
+    service.expects(:generate_request).once().with(:get, "http://myaccount.tables.core.windows.net/Customers()?$filter=expression&NextPartitionKey=next_partition_key&NextRowKey=next_row_key", expected_headers, nil).returns(rest_client2)
+    entities = service.query_entity('Customers', 'expression')
+
+   entities.length.should == 2
+  end  
   
   it "should throw when invalid table name is provided" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
@@ -329,5 +527,10 @@ describe "tables service behavior" do
   it "should throw when invalid table name is provided" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
     lambda { service.get_entity('9existing', 'foo', 'foo') }.should raise_error(WAZ::Storage::InvalidParameterValue)
+  end
+  
+  it "should throw when invalid table name is provided" do
+    service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
+    lambda { service.query_entity('9existing', 'foo') }.should raise_error(WAZ::Storage::InvalidParameterValue)
   end
 end

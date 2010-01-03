@@ -4,7 +4,10 @@ module WAZ
     # implementation. You can use this class to perform an specific operation that isn't provided by the current API.
     class Service
       include WAZ::Storage::SharedKeyCoreService
-
+      
+      DATASERVICES_NAMESPACE = "http://schemas.microsoft.com/ado/2007/08/dataservices"      
+      DATASERVICES_METADATA_NAMESPACE = "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata"
+      
       # Creates a table on the current Windows Azure Storage account.
       def create_table(table_name)
         raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
@@ -36,7 +39,7 @@ module WAZ
 
         doc = REXML::Document.new(content)
         tables = REXML::XPath.each(doc, '/feed/entry').map do |item|
-            { :name => REXML::XPath.first(item.elements['content'], "m:properties/d:TableName", {"m" => "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata", "d" => "http://schemas.microsoft.com/ado/2007/08/dataservices"}).text,
+            { :name => REXML::XPath.first(item.elements['content'], "m:properties/d:TableName", {"m" => DATASERVICES_METADATA_NAMESPACE, "d" => DATASERVICES_NAMESPACE}).text,
               :url => REXML::XPath.first(item, "id").text }
         end
         
@@ -51,27 +54,15 @@ module WAZ
           content = execute :get, "Tables('#{table_name}')", {}, { 'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
           doc = REXML::Document.new(content)
           item = REXML::XPath.first(doc, "entry")
-          return {  :name => REXML::XPath.first(item.elements['content'], "m:properties/d:TableName", {"m" => "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata", "d" => "http://schemas.microsoft.com/ado/2007/08/dataservices"}).text,
+          return {  :name => REXML::XPath.first(item.elements['content'], "m:properties/d:TableName", {"m" => DATASERVICES_METADATA_NAMESPACE, "d" => DATASERVICES_NAMESPACE}).text,
                     :url => REXML::XPath.first(item, "id").text }
         rescue RestClient::ResourceNotFound
           raise WAZ::Tables::TableDoesNotExist, table_name if $!.http_code == 404
         end        
       end
-      
-      # Retrieves an existing entity on the current storage account.
-      def get_entity(table_name, partition_key, row_key)
-        raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
-        
-        begin
-          parse_entity_response execute :get, "#{table_name}(PartitionKey='#{partition_key}',RowKey='#{row_key}')", {}, { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
-        rescue
-          puts $!
-        end
-      end    
-        
+             
       # Insert a new entity on the provided table for the current storage account
       # TODO: catch all api errors as described on Table Service Error Codes on MSDN (http://msdn.microsoft.com/en-us/library/dd179438.aspx)
-      # TODO: parse the response and return the inserted entity      
       def insert_entity(table_name, entity)
         raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
         raise WAZ::Tables::TooManyProperties, entity[:fields].length if entity[:fields].length > 252 
@@ -87,7 +78,7 @@ module WAZ
                    "<d:RowKey>#{entity[:row_key]}</d:RowKey>" \
                    "<d:Timestamp m:type=\"Edm.DateTime\">#{Time.now.utc.iso8601}</d:Timestamp></m:properties></content></entry>"
         begin
-          execute :post, table_name, {}, { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, payload
+          parse_entity execute :post, table_name, {}, { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, payload
         rescue RestClient::RequestFailed          
           raise WAZ::Tables::EntityAlreadyExists, entity[:row_key] if $!.http_code == 409 and $!.response.body.include?('EntityAlreadyExists')          
         end     
@@ -105,24 +96,59 @@ module WAZ
         end
       end
       
-      private
-        def parse_entity_response(response)
-          File.open('/Users/jpgarcia/Desktop/entity.txt','w') { |f| f.write response}
-          doc = REXML::Document.new(response)
-          table_name = REXML::XPath.first(doc, "/entry/link").attributes['title']
-          entry = REXML::XPath.first(doc, "/entry")
-          partition_key = REXML::XPath.first(entry.elements['content'], "m:properties/d:PartitionKey", {"m" => "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata", "d" => "http://schemas.microsoft.com/ado/2007/08/dataservices"}).text
-          row_key = REXML::XPath.first(entry.elements['content'], "m:properties/d:RowKey", {"m" => "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata", "d" => "http://schemas.microsoft.com/ado/2007/08/dataservices"}).text
-          url = REXML::XPath.first(doc, "/entry/id").text 
+      # Retrieves an existing entity on the current storage account.
+      # TODO: handle specific errors
+      def get_entity(table_name, partition_key, row_key)
+        raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+        
+        begin
+          parse_entity execute :get, "#{table_name}(PartitionKey='#{partition_key}',RowKey='#{row_key}')", {}, { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
+        rescue
+          puts $!
+        end
+      end    
+      
+      # Retrieves a set of entities on the current storage account for a given query.
+      # When the :top => n is passed it returns only the first n rows that match with the query
+      # TODO: handle specific errors
+      def query_entity(table_name, expression, top = nil)
+        raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+        begin
+          entities, next_partition_key, next_row_key = [], nil, nil
+          file = File.open('/Users/jpgarcia/Desktop/log.txt', 'w')
+          begin
+            query = {'$filter' => expression }
+            query.merge!({ '$top' => top }) unless top.nil?
+            query.merge!({ 'NextPartitionKey' => next_partition_key, 'NextRowKey' => next_row_key }) unless (next_partition_key.nil? and next_row_key.nil?)
+            headers = { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
+            response = execute :get, "#{table_name}()", query, headers
+            next_partition_key, next_row_key  = response.headers[:x_ms_continuation_nextpartitionkey], response.headers[:x_ms_continuation_nextrowkey]
+            entities << parse_entity(response)
+            entities.flatten!
+            break if (!top.nil? and entities.length == top)
+          end while (!next_partition_key.nil? and !next_row_key.nil?)
+          return entities
+        rescue
+          puts $!
+        end
+      end
 
-          fields = REXML::XPath.each(entry.elements['content'], 'm:properties/*', {"m" => "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata"}).map do |item|
-            { :name => item.name, 
-              :type => item.attributes['m:type'].nil? ? 'String' : item.attributes['m:type'].gsub('Edm.',''), 
-              :value => parse_value(item) }
-          end
-          
-          fields = fields.reject{|item| item[:name] == 'PartitionKey' or item[:name] == 'RowKey'}
-          { :table_name => table_name, :partition_key => partition_key, :row_key => row_key , :url => url, :fields => fields}          
+      private
+        def parse_entity(response)
+          doc = REXML::Document.new(response)
+          xpath_query = REXML::XPath.first(doc, '/feed').nil? ? '/entry' : '/feed/entry' 
+          entities = REXML::XPath.each(doc, xpath_query).map { |entry|
+            table_name = REXML::XPath.first(entry, "link").attributes['title']
+            partition_key = REXML::XPath.first(entry.elements['content'], "m:properties/d:PartitionKey", {"m" => DATASERVICES_METADATA_NAMESPACE, "d" => DATASERVICES_NAMESPACE}).text
+            row_key = REXML::XPath.first(entry.elements['content'], "m:properties/d:RowKey", {"m" => DATASERVICES_METADATA_NAMESPACE, "d" => DATASERVICES_NAMESPACE}).text
+            url = REXML::XPath.first(entry, "id").text 
+
+            fields = REXML::XPath.each(entry.elements['content'], 'm:properties/*', {"m" => DATASERVICES_METADATA_NAMESPACE}).map { |f|
+              { :name => f.name, :type => f.attributes['m:type'].nil? ? 'String' : f.attributes['m:type'].gsub('Edm.',''), :value => parse_value(f) }
+            }
+            { :table_name => table_name, :partition_key => partition_key, :row_key => row_key , :url => url, :fields => fields}
+          }
+          (xpath_query == '/feed/entry') ? entities : entities.first unless entities.nil?
         end
         
       private
