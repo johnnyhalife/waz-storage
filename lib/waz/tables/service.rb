@@ -10,12 +10,15 @@ module WAZ
       
       # Creates a table on the current Windows Azure Storage account.
       def create_table(table_name)
-        raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
-        
-        payload = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><entry xmlns:d=\"http://schemas.microsoft.com/ado/2007/08/dataservices\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\" xmlns=\"http://www.w3.org/2005/Atom\"><title /><updated>#{Time.now.utc.iso8601}</updated><author><name/></author><id/><content type=\"application/xml\"><m:properties><d:TableName>#{table_name}</d:TableName></m:properties></content></entry>"
+        raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+
+        payload = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>" \
+                  "<entry xmlns:d=\"#{DATASERVICES_NAMESPACE}\" xmlns:m=\"#{DATASERVICES_METADATA_NAMESPACE}\" xmlns=\"http://www.w3.org/2005/Atom\">" \
+                  "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name/></author><id/>" \
+                  "<content type=\"application/xml\"><m:properties><d:TableName>#{table_name}</d:TableName></m:properties></content></entry>"
 
         begin
-          execute :post, 'Tables', {}, { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, payload
+          execute :post, 'Tables', {}, default_headers, payload
           {:name => table_name, :url => "#{self.base_url}/Tables('#{table_name}"}
         rescue RestClient::RequestFailed
           raise WAZ::Tables::TableAlreadyExists, table_name if $!.http_code == 409
@@ -24,18 +27,19 @@ module WAZ
       
       # Delete a table on the current Windows Azure Storage account.
       def delete_table(table_name)
-        raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+        raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
         begin
-          execute :delete, "Tables('#{table_name}')", {}, { 'Date' => Time.new.httpdate,  'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
+          execute :delete, "Tables('#{table_name}')", {}, default_headers
         rescue RestClient::ResourceNotFound
           raise WAZ::Tables::TableDoesNotExist, table_name if $!.http_code == 404
         end
       end
       
       # Lists all existing tables on the current storage account.
+      # remove Content-Type if it's not working
       def list_tables(next_table_name = nil)
         query = { 'NextTableName' => next_table_name } unless next_table_name.nil?
-        content = execute :get, "Tables", query ||= {}, { 'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
+        content = execute :get, "Tables", query ||= {}, default_headers
 
         doc = REXML::Document.new(content)
         tables = REXML::XPath.each(doc, '/feed/entry').map do |item|
@@ -47,11 +51,12 @@ module WAZ
       end
       
       # Retrieves an existing table on the current storage account.
+      # remove Content-Type if it's not working
       def get_table(table_name)
-        raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)        
+        raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)        
         
         begin
-          content = execute :get, "Tables('#{table_name}')", {}, { 'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
+          content = execute :get, "Tables('#{table_name}')", {}, default_headers
           doc = REXML::Document.new(content)
           item = REXML::XPath.first(doc, "entry")
           return {  :name => REXML::XPath.first(item.elements['content'], "m:properties/d:TableName", {"m" => DATASERVICES_METADATA_NAMESPACE, "d" => DATASERVICES_NAMESPACE}).text,
@@ -64,11 +69,12 @@ module WAZ
       # Insert a new entity on the provided table for the current storage account
       # TODO: catch all api errors as described on Table Service Error Codes on MSDN (http://msdn.microsoft.com/en-us/library/dd179438.aspx)
       def insert_entity(table_name, entity)
-        raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+        raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
         raise WAZ::Tables::TooManyProperties, entity[:fields].length if entity[:fields].length > 252 
         
         begin
-          parse_entity execute :post, table_name, {}, { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, generate_payload(table_name, entity)          
+          response = execute(:post, table_name, {}, default_headers, generate_payload(table_name, entity))
+          return parse_entity(response)          
         rescue RestClient::RequestFailed          
           raise WAZ::Tables::EntityAlreadyExists, entity[:row_key] if $!.http_code == 409 and $!.response.body.include?('EntityAlreadyExists')          
         end     
@@ -77,8 +83,9 @@ module WAZ
       # Update an existing entity on the current storage account.
       # TODO: handle specific errors
       def update_entity(table_name, entity)
-        raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
-        parse_entity execute :put, "#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')", {}, { 'If-Match' => '*', 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, generate_payload(table_name, entity)
+        raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+        response = execute(:put, "#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')", {}, default_headers.merge({'If-Match' => '*'}) , generate_payload(table_name, entity))
+        return parse_entity(response)
       end
       
       # Merge an existing entity on the current storage account.
@@ -86,16 +93,17 @@ module WAZ
       # This operation does not replace the existing entity, as the Update Entity operation does
       # TODO: handle specific errors
       def merge_entity(table_name, entity)
-        raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
-        parse_entity execute :merge, "#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')", {}, { 'If-Match' => '*', 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }, generate_payload(table_name, entity)
+        raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+        response = execute(:merge, "#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')", {}, default_headers.merge({'If-Match' => '*'}), generate_payload(table_name, entity))
+        return parse_entity(response)
       end
       
       # Delete an existing entity in a table.
       def delete_entity(table_name, partition_key, row_key)
-        raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["lower letters, numbers or - (hypen), and must not start or end with - (hyphen)"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+        raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
         
         begin
-          execute :delete, "#{table_name}(PartitionKey='#{partition_key}',RowKey='#{row_key}')", {}, { 'If-Match' => '*', 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
+          execute :delete, "#{table_name}(PartitionKey='#{partition_key}',RowKey='#{row_key}')", {}, default_headers.merge({'If-Match' => '*'})
         rescue RestClient::ResourceNotFound
           raise WAZ::Tables::TableDoesNotExist, table_name if $!.http_code == 404 and $!.response.body.include?('TableNotFound')
           raise WAZ::Tables::EntityDoesNotExist, "(PartitionKey='#{partition_key}',RowKey='#{row_key}')" if $!.http_code == 404
@@ -105,22 +113,22 @@ module WAZ
       # Retrieves an existing entity on the current storage account.
       # TODO: handle specific errors
       def get_entity(table_name, partition_key, row_key)
-        raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
-        parse_entity execute :get, "#{table_name}(PartitionKey='#{partition_key}',RowKey='#{row_key}')", {}, { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
+        raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+        response = execute(:get, "#{table_name}(PartitionKey='#{partition_key}',RowKey='#{row_key}')", {}, default_headers)
+        return parse_entity(response)        
       end    
       
       # Retrieves a set of entities on the current storage account for a given query.
       # When the :top => n is passed it returns only the first n rows that match with the query
       # TODO: handle specific errors
       def query_entity(table_name, expression = nil, top = nil)
-        raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+        raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
         entities, next_partition_key, next_row_key = [], nil, nil
         begin
           query = {'$filter' => (expression or '') }
           query.merge!({ '$top' => top }) unless top.nil?
           query.merge!({ 'NextPartitionKey' => next_partition_key, 'NextRowKey' => next_row_key }) unless (next_partition_key.nil? and next_row_key.nil?)
-          headers = { 'Date' => Time.new.httpdate, 'Content-Type' => 'application/atom+xml', 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx' }
-          response = execute :get, "#{table_name}()", query, headers
+          response = execute :get, "#{table_name}()", query, default_headers
           next_partition_key, next_row_key  = response.headers[:x_ms_continuation_nextpartitionkey], response.headers[:x_ms_continuation_nextrowkey]
           entities << parse_entity(response)
           entities.flatten!
@@ -132,7 +140,7 @@ module WAZ
       private 
         def generate_payload(table_name, entity)
           payload = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>" \
-                     "<entry xmlns:d=\"http://schemas.microsoft.com/ado/2007/08/dataservices\" xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\" xmlns=\"http://www.w3.org/2005/Atom\">" \
+                     "<entry xmlns:d=\"#{DATASERVICES_NAMESPACE}\" xmlns:m=\"#{DATASERVICES_METADATA_NAMESPACE}\" xmlns=\"http://www.w3.org/2005/Atom\">" \
                      "<id>#{generate_request_uri "#{table_name}"}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')</id>" \
                      "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"#{table_name}\" href=\"#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')\" />" \
                      "<content type=\"application/xml\"><m:properties>"
@@ -144,8 +152,7 @@ module WAZ
           payload << "</m:properties></content></entry>"
           return payload
         end
-
-      private
+        
         def parse_entity(response)
           doc = REXML::Document.new(response)
           xpath_query = REXML::XPath.first(doc, '/feed').nil? ? '/entry' : '/feed/entry' 
@@ -165,25 +172,25 @@ module WAZ
           (xpath_query == '/feed/entry') ? entities : entities.first unless entities.nil?
         end
         
-      private
         def parse_value(item)    
           return nil if !item.attributes['m:null'].nil? and item.attributes['m:null'] == 'true'
           case item.attributes['m:type']
-            when 'Edm.Int16'
+            when 'Edm.Int16', 'Edm.Int32', 'Edm.Int64'
               item.text.to_i
-            when 'Edm.Int32'
-              item.text.to_i
-            when 'Edm.Int64'
-              item.text.to_i
+            when 'Edm.Single', 'Edm.Double'
+              item.text.to_f
             when 'Edm.Boolean'
               item.text == 'true'
-            when 'Edm.Single'
-              item.text.to_f
-            when 'Edm.Double'
-              item.text.to_f
             else
               item.text
           end
+        end
+        
+        def default_headers
+          { 'Date' => Time.new.httpdate, 
+            'Content-Type' => 'application/atom+xml', 
+            'DataServiceVersion' => '1.0;NetFx', 
+            'MaxDataServiceVersion' => '1.0;NetFx' }
         end
     end
   end

@@ -36,7 +36,7 @@ describe "tables service behavior" do
 
     RestClient::Request.any_instance.expects(:execute).returns(response)
     service.expects(:generate_request_uri).with("Tables('table1')", {}, nil).returns("http://localhost/Tables('table1')")
-    service.expects(:generate_request).with(:get, "http://localhost/Tables('table1')", { 'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx'}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost/Tables('table1')"))
+    service.expects(:generate_request).with(:get, "http://localhost/Tables('table1')", { 'Content-Type' => 'application/atom+xml', 'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx'}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost/Tables('table1')"))
     table = service.get_table('table1')
     table[:name].should == 'table1'
     table[:url].should == "http://myaccount.table.core.windows.net/Tables('table1')"    
@@ -87,7 +87,7 @@ describe "tables service behavior" do
 
     RestClient::Request.any_instance.expects(:execute).returns(response)
     service.expects(:generate_request_uri).with("Tables", {}, nil).returns("http://localhost/Tables")
-    service.expects(:generate_request).with(:get, "http://localhost/Tables", { 'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx'}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost/Tables"))
+    service.expects(:generate_request).with(:get, "http://localhost/Tables", {'Content-Type' => 'application/atom+xml', 'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx'}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost/Tables"))
     tables, next_table_name = service.list_tables
     tables.length.should == 2
     tables.first()[:name].should == 'table1'
@@ -103,7 +103,7 @@ describe "tables service behavior" do
     response.stubs(:headers).returns({:x_ms_continuation_nexttablename => 'next-table'})
     RestClient::Request.any_instance.expects(:execute).returns(response)
     service.expects(:generate_request_uri).with("Tables", { 'NextTableName' => 'next-table-name' }, nil).returns("http://localhost/Tables?NextTableName=next-table-name")
-    service.expects(:generate_request).with(:get, "http://localhost/Tables?NextTableName=next-table-name", {'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx'}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost/Tables?NextTableName=next-table-name"))
+    service.expects(:generate_request).with(:get, "http://localhost/Tables?NextTableName=next-table-name", {'Content-Type' => 'application/atom+xml','Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'MaxDataServiceVersion' => '1.0;NetFx'}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost/Tables?NextTableName=next-table-name"))
     tables, next_table_name = service.list_tables('next-table-name')
   end
   
@@ -592,46 +592,46 @@ describe "tables service behavior" do
   
   it "should throw when invalid table name is provided" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
-    lambda { service.create_table('9existing') }.should raise_error(WAZ::Storage::InvalidParameterValue)
+    lambda { service.create_table('9existing') }.should raise_error(WAZ::Tables::InvalidTableName)
   end
   
   it "should throw when invalid table name is provided" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
-    lambda { service.delete_table('9existing') }.should raise_error(WAZ::Storage::InvalidParameterValue)
+    lambda { service.delete_table('9existing') }.should raise_error(WAZ::Tables::InvalidTableName)
   end
 
   it "should throw when invalid table name is provided" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
-    lambda { service.get_table('9existing') }.should raise_error(WAZ::Storage::InvalidParameterValue)
+    lambda { service.get_table('9existing') }.should raise_error(WAZ::Tables::InvalidTableName)
   end
 
   it "should throw when invalid table name is provided" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
-    lambda { service.insert_entity('9existing', 'entity') }.should raise_error(WAZ::Storage::InvalidParameterValue)
+    lambda { service.insert_entity('9existing', 'entity') }.should raise_error(WAZ::Tables::InvalidTableName)
   end
   
   it "should throw when invalid table name is provided" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
-    lambda { service.delete_entity('9existing', 'foo', 'foo') }.should raise_error(WAZ::Storage::InvalidParameterValue)
+    lambda { service.delete_entity('9existing', 'foo', 'foo') }.should raise_error(WAZ::Tables::InvalidTableName)
   end
   
   it "should throw when invalid table name is provided" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
-    lambda { service.get_entity('9existing', 'foo', 'foo') }.should raise_error(WAZ::Storage::InvalidParameterValue)
+    lambda { service.get_entity('9existing', 'foo', 'foo') }.should raise_error(WAZ::Tables::InvalidTableName)
   end
   
   it "should throw when invalid table name is provided" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
-    lambda { service.query_entity('9existing', 'foo') }.should raise_error(WAZ::Storage::InvalidParameterValue)
+    lambda { service.query_entity('9existing', 'foo') }.should raise_error(WAZ::Tables::InvalidTableName)
   end
   
   it "should throw when invalid table name is provided" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
-    lambda { service.update_entity('9existing', {}) }.should raise_error(WAZ::Storage::InvalidParameterValue)
+    lambda { service.update_entity('9existing', {}) }.should raise_error(WAZ::Tables::InvalidTableName)
   end
   
   it "should throw when invalid table name is provided" do
     service = WAZ::Tables::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "table", :use_ssl => true, :base_url => "localhost")    
-    lambda { service.merge_entity('9existing', {}) }.should raise_error(WAZ::Storage::InvalidParameterValue)
+    lambda { service.merge_entity('9existing', {}) }.should raise_error(WAZ::Tables::InvalidTableName)
   end
 end

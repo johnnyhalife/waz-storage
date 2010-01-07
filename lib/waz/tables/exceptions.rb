@@ -14,6 +14,13 @@ module WAZ
       end
     end
     
+    # This exception is raised when an invalid table name is provided.
+    class InvalidTableName < WAZ::Storage::StorageException
+      def initialize(name)
+        super("The table name #{name} is invalid, it must start with at least one lower/upper characted, must be from 3 through 63 characters long and can have character or any digit starting from the second position")
+      end
+    end
+    
     # This exception is raised when provided more than the 252 properties allowed by the Rest API.
     class TooManyProperties < WAZ::Storage::StorageException
       def initialize(total)

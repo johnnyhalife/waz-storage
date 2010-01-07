@@ -13,7 +13,7 @@ module WAZ
         self.use_ssl = options[:use_ssl] or false
         self.use_devenv = (!options[:use_devenv].nil? and options[:use_devenv])
         self.base_url = "#{options[:type_of_service] or "blobs"}.#{options[:base_url] or "core.windows.net"}" if (options[:use_devenv].nil? or !options[:use_devenv])
-        self.base_url = (options[:base_url] or "core.windows.net") if !options[:use_devenv].nil? and options[:use_devenv]
+        self.base_url ||= (options[:base_url] or "core.windows.net") 
       end
       
       # Generates a request based on Adam Wiggings' rest-client, including all the required headers
@@ -35,7 +35,7 @@ module WAZ
         protocol = use_ssl ? "https" : "http"
         query_params = options.keys.sort{ |a, b| a.to_s <=> b.to_s}.map{ |k| "#{k.to_s.gsub(/_/, '')}=#{CGI.escape(options[k].to_s)}"}.join("&") unless options.nil? or options.empty?
         uri = "#{protocol}://#{base_url}/#{account_name}#{(path or "").start_with?("/") ? "" : "/"}#{(path or "")}" if !self.use_devenv.nil? and self.use_devenv
-        uri = "#{protocol}://#{account_name}.#{base_url}#{(path or "").start_with?("/") ? "" : "/"}#{(path or "")}" if self.use_devenv.nil? or !self.use_devenv
+        uri ||= "#{protocol}://#{account_name}.#{base_url}#{(path or "").start_with?("/") ? "" : "/"}#{(path or "")}" 
         uri << "?#{query_params}" if query_params
         return uri
       end
