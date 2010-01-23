@@ -70,7 +70,7 @@ module WAZ
       # TODO: catch all api errors as described on Table Service Error Codes on MSDN (http://msdn.microsoft.com/en-us/library/dd179438.aspx)
       def insert_entity(table_name, entity)
         raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
-        raise WAZ::Tables::TooManyProperties, entity[:fields].length if entity[:fields].length > 252 
+        raise WAZ::Tables::TooManyProperties, entity.length if entity.length > 252 
         
         begin
           response = execute(:post, table_name, {}, default_headers, generate_payload(table_name, entity))
@@ -145,10 +145,10 @@ module WAZ
                      "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"#{table_name}\" href=\"#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')\" />" \
                      "<content type=\"application/xml\"><m:properties>"
 
-          entity[:fields].sort_by { |k| k }.each { |k,v| payload << (!v[:value].nil? ? "<d:#{k} m:type=\"Edm.#{v[:type]}\">#{v[:value].to_s}</d:#{k}>" : "<d:#{k} m:type=\"Edm.#{v[:type]}\" m:null=\"true\" />") }          
+          entity.sort_by { |k| k.to_s }.each { |k,v| payload << (!v.nil? ? "<d:#{k.to_s} m:type=\"#{k.edm_type || EdmTypeHelper.parse_to(v)[1]}\">#{EdmTypeHelper.parse_to(v)[0].to_s}</d:#{k.to_s}>" : "<d:#{k.to_s} m:type=\"#{k.edm_type || EdmTypeHelper.parse_to(v)[1]}\" m:null=\"true\" />") unless k.eql?(:partition_key) or k.eql?(:row_key) }          
 
-          payload << "<d:PartitionKey>#{entity[:partition_key]}</d:PartitionKey>" unless entity[:fields].keys.include?('PartitionKey') 
-          payload << "<d:RowKey>#{entity[:row_key]}</d:RowKey>" unless entity[:fields].keys.include?('RowKey') 
+          payload << "<d:PartitionKey>#{entity[:partition_key]}</d:PartitionKey>"
+          payload << "<d:RowKey>#{entity[:row_key]}</d:RowKey>"
           payload << "</m:properties></content></entry>"
           return payload
         end
@@ -157,33 +157,14 @@ module WAZ
           doc = REXML::Document.new(response)
           xpath_query = REXML::XPath.first(doc, '/feed').nil? ? '/entry' : '/feed/entry' 
           entities = REXML::XPath.each(doc, xpath_query).map { |entry|
-            table_name = REXML::XPath.first(entry, "link").attributes['title']
-            etag = entry.attributes['m:etag']
-            partition_key = REXML::XPath.first(entry.elements['content'], "m:properties/d:PartitionKey", {"m" => DATASERVICES_METADATA_NAMESPACE, "d" => DATASERVICES_NAMESPACE}).text
-            row_key = REXML::XPath.first(entry.elements['content'], "m:properties/d:RowKey", {"m" => DATASERVICES_METADATA_NAMESPACE, "d" => DATASERVICES_NAMESPACE}).text
-            url = REXML::XPath.first(entry, "id").text 
-
             fields = REXML::XPath.each(entry.elements['content'], 'm:properties/*', {"m" => DATASERVICES_METADATA_NAMESPACE}).map { |f|
-              { f.name => { :type => f.attributes['m:type'].nil? ? 'String' : f.attributes['m:type'].gsub('Edm.',''), :value => parse_value(f) } }
+              f.name.gsub!(/PartitionKey/i, 'partition_key')
+              f.name.gsub!(/RowKey/i, 'row_key')
+              { f.name.to_sym => EdmTypeHelper.parse_from(f) }
             }
-            fields = Hash[*fields.collect {|h| h.to_a}.flatten]
-            { :table_name => table_name, :etag => etag, :partition_key => partition_key, :row_key => row_key , :url => url, :fields => fields}
+            Hash[*fields.collect {|h| h.to_a}.flatten]
           }
           (xpath_query == '/feed/entry') ? entities : entities.first unless entities.nil?
-        end
-        
-        def parse_value(item)    
-          return nil if !item.attributes['m:null'].nil? and item.attributes['m:null'] == 'true'
-          case item.attributes['m:type']
-            when 'Edm.Int16', 'Edm.Int32', 'Edm.Int64'
-              item.text.to_i
-            when 'Edm.Single', 'Edm.Double'
-              item.text.to_f
-            when 'Edm.Boolean'
-              item.text == 'true'
-            else
-              item.text
-          end
         end
         
         def default_headers
