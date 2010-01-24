@@ -385,13 +385,15 @@ describe "tables service behavior" do
       </entry>
     eom
     expected_headers = {'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}    
+    expected_url = "http://myaccount.tables.core.windows.net/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')"
     RestClient::Request.any_instance.expects(:execute).returns(mock_response)
-    @table_service.expects(:generate_request_uri).with("Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", {}).returns("http://myaccount.tables.core.windows.net/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')")
-    @table_service.expects(:generate_request).with(:get, "http://myaccount.tables.core.windows.net/Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", expected_headers, nil).returns(RestClient::Request.new(:method => :post, :url => "http://myaccount.tables.core.windows.net(PartitionKey='myPartitionKey',RowKey='myRowKey1')", :headers => expected_headers))
+    @table_service.expects(:generate_request_uri).with("Customers(PartitionKey='myPartitionKey',RowKey='myRowKey1')", {}).returns(expected_url)
+    @table_service.expects(:generate_request).with(:get, expected_url, expected_headers, nil).returns(RestClient::Request.new(:method => :post, :url => expected_url, :headers => expected_headers))
 
     entity = @table_service.get_entity('Customers', 'myPartitionKey', 'myRowKey1')
 
     entity.length.should == 12
+    
     entity[:partition_key].should == 'myPartitionKey'
     entity[:row_key].should == 'myRowKey1'
     entity[:Timestamp].should == Time.parse('2008-10-01T15:26:04.6812774Z')
@@ -462,15 +464,17 @@ describe "tables service behavior" do
     eom
     mock_response.stubs(:headers).returns({})            
     expected_headers = {'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}    
+    expected_url = "http://myaccount.tables.core.windows.net/Customers()?$filter=expression"
     expected_query = { '$filter' => "expression" }
 
     RestClient::Request.any_instance.expects(:execute).once().returns(mock_response)
-    @table_service.expects(:generate_request_uri).with("Customers()", expected_query).returns("http://myaccount.tables.core.windows.net/Customers()?$filter=expression")
-    @table_service.expects(:generate_request).with(:get, "http://myaccount.tables.core.windows.net/Customers()?$filter=expression", expected_headers, nil).returns(RestClient::Request.new(:method => :post, :url => "http://myaccount.tables.core.windows.net/Customers()?$filter=expression", :headers => expected_headers))
-    entities = @table_service.query_entity('Customers', 'expression')
+    @table_service.expects(:generate_request_uri).with("Customers()", expected_query).returns(expected_url)
+    @table_service.expects(:generate_request).with(:get, expected_url, expected_headers, nil).returns(RestClient::Request.new(:method => :post, :url => expected_url, :headers => expected_headers))
+    entities = @table_service.query_entity('Customers', {:expression => 'expression'})
 
     entities.length.should == 2
-
+    entities.continuation_token[:next_partition_key].nil?.should == true
+    entities.continuation_token[:next_row_key].nil?.should == true    
 
     entities.first.length.should == 8
     entities.first[:partition_key].should == 'myPartitionKey'
@@ -523,17 +527,20 @@ describe "tables service behavior" do
     mock_response.stubs(:headers).returns({})        
     
     expected_headers = {'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}    
+    expected_url = "http://myaccount.tables.core.windows.net/Customers()?$filter=expression&$top=1"
     expected_query = { '$filter' => "expression", '$top' => 1 }
 
     RestClient::Request.any_instance.expects(:execute).once().returns(mock_response)
-    @table_service.expects(:generate_request_uri).once().with("Customers()", expected_query).returns("http://myaccount.tables.core.windows.net/Customers()?$filter=expression&$top=1")
-    @table_service.expects(:generate_request).once().with(:get, "http://myaccount.tables.core.windows.net/Customers()?$filter=expression&$top=1", expected_headers, nil).returns(RestClient::Request.new(:method => :post, :url => "http://myaccount.tables.core.windows.net/Customers()?$filter=expression&$top=1", :headers => expected_headers))
-    entities = @table_service.query_entity('Customers', 'expression', 1)
+    @table_service.expects(:generate_request_uri).once().with("Customers()", expected_query).returns(expected_url)
+    @table_service.expects(:generate_request).once().with(:get, expected_url, expected_headers, nil).returns(RestClient::Request.new(:method => :post, :url => expected_url, :headers => expected_headers))
+    entities = @table_service.query_entity('Customers', {:expression => 'expression', :top => 1 })
 
     entities.length.should == 1
+    entities.continuation_token[:next_partition_key].nil?.should == true
+    entities.continuation_token[:next_row_key].nil?.should == true        
   end
   
-  it "should call execute method recursively when there are continuation token headers" do
+  it "should return a continuation token as array property" do
     sample_feed = <<-eom
     <?xml version="1.0" encoding="utf-8" standalone="yes"?>
     <feed xml:base="http://myaccount.tables.core.windows.net/" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns="http://www.w3.org/2005/Atom">
@@ -560,28 +567,21 @@ describe "tables service behavior" do
       </entry>
     </feed>  
     eom
-    mock_response1, mock_response2 = sample_feed
-    mock_response1.stubs(:headers).returns({:x_ms_continuation_nextpartitionkey => 'next_partition_key', :x_ms_continuation_nextrowkey => 'next_row_key'})    
-    mock_response2.stubs(:headers).returns({})    
+    mock_response, mock_response2 = sample_feed
+    mock_response.stubs(:headers).returns({:x_ms_continuation_nextpartitionkey => 'next_partition_key_value', :x_ms_continuation_nextrowkey => 'next_row_key_value'})
     
-    expected_headers = {'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}    
+    expected_headers = {'Date' => Time.new.httpdate, 'DataServiceVersion' => '1.0;NetFx', 'Content-Type' => 'application/atom+xml', 'MaxDataServiceVersion' => '1.0;NetFx'}
+    expected_query = { '$filter' => "expression" }    
+    rest_client = RestClient::Request.new(:method => :post, :url => "http://myaccount.tables.core.windows.net/Customers()?$filter=expression", :headers => expected_headers)
+    rest_client.expects(:execute).once().returns(mock_response)
 
-    expected_query1 = { '$filter' => "expression" }    
-    expected_query2 = { 'NextRowKey' => 'next_row_key', '$filter' => "expression", 'NextPartitionKey' => 'next_partition_key' }
+    @table_service.expects(:generate_request_uri).with("Customers()", expected_query).returns("http://myaccount.tables.core.windows.net/Customers()?$filter=expression")
+    @table_service.expects(:generate_request).once().with(:get, "http://myaccount.tables.core.windows.net/Customers()?$filter=expression", expected_headers, nil).returns(rest_client)
+    entities = @table_service.query_entity('Customers', {:expression => 'expression'})
 
-    rest_client1 = RestClient::Request.new(:method => :post, :url => "http://myaccount.tables.core.windows.net/Customers()?$filter=expression", :headers => expected_headers)
-    rest_client1.expects(:execute).once().returns(mock_response1)
-
-    rest_client2 = RestClient::Request.new(:method => :post, :url => "http://myaccount.tables.core.windows.net/Customers()?$filter=expression&NextPartitionKey=next_partition_key&NextRowKey=next_row_key", :headers => expected_headers)
-    rest_client2.expects(:execute).once().returns(mock_response2)
-
-    @table_service.expects(:generate_request_uri).with("Customers()", expected_query1).returns("http://myaccount.tables.core.windows.net/Customers()?$filter=expression")
-    @table_service.expects(:generate_request_uri).with("Customers()", expected_query2).returns("http://myaccount.tables.core.windows.net/Customers()?$filter=expression&NextPartitionKey=next_partition_key&NextRowKey=next_row_key")
-    @table_service.expects(:generate_request).once().with(:get, "http://myaccount.tables.core.windows.net/Customers()?$filter=expression", expected_headers, nil).returns(rest_client1)
-    @table_service.expects(:generate_request).once().with(:get, "http://myaccount.tables.core.windows.net/Customers()?$filter=expression&NextPartitionKey=next_partition_key&NextRowKey=next_row_key", expected_headers, nil).returns(rest_client2)
-    entities = @table_service.query_entity('Customers', 'expression')
-
-   entities.length.should == 2
+   entities.length.should == 1
+   entities.continuation_token['NextPartitionKey'].should == 'next_partition_key_value'
+   entities.continuation_token['NextRowKey'].should == 'next_row_key_value'
   end  
   
   it "should throw when invalid table name is provided" do

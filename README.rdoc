@@ -16,6 +16,8 @@ Well, this is a sum up of the whole experience of writing those gems and getting
 end user experience. Although there're some breaking changes, it's pretty backward compatible with existing gems.
 
 === What's new on the 0.5.8 version?
+- Added Entities operations on Table service to query, get_one, insert, update, merge and delete.
+- Added support for running against the storage development fabriq.
 - Added signature support for Tables service since it differs slightly from that for a request against the Blob or Queue services, according to msdn.microsoft.com/en-us/library/dd179428.aspx
 - Added Table operations to enumerate the tables in a storage account, create a new table, and delete an existing table.
 - Fixed an issue on the Queues Documentation (thanks @ezequielm)
@@ -122,7 +124,6 @@ I've been doing lot of testing around and it works seamlessly with the current W
 It's pretty intuitive, but full documentation (RDoc) is available for the API for further reference.	
 
 == Usage: Tables
-(Work in progress)
 The tables implementation inside this gem is fully compliant with the spec available at http://msdn.microsoft.com/en-us/library/dd179423.aspx. The Windows 
 Azure Tables REST API isn't fully covered here (see TODO's for more information).
 
@@ -153,27 +154,33 @@ Azure Tables REST API isn't fully covered here (see TODO's for more information)
 	# get the existing service instance
 	service = WAZ::Tables::Table.service_instance
 
-	# define a new entity with its fields
-	fields = {'Address' => { :type => 'String', :value => 'Mountain View'},
-				'Age' => { :type => 'Int32', :value => 23},
-				'AmountDue' => { :type => 'Double', :value => 200.23},
-				'BinaryData' => { :type => 'Binary', :value => nil},
-				'CustomerCode' => { :type => 'Guid', :value => 'c9da6455-213d-42c9-9a79-3e9149a57833'},
-				'CustomerSince' =>{ :type => 'DateTime', :value => Time.now.utc.iso8601},
-				'IsActive' =>{ :type => 'Boolean', :value => true},
-				'NumOfOrders' => {:type => 'Int64', :value => 255}}                    
-	entity = { :partition_key => 'customer', :row_key => 'rowKey1 , :fields =>  fields }    
+	# define a new entity
+    entity = { :address => 'Mountain View',
+               :age => 23,
+               :amount_due => 200.23,
+               :binary_data => File.open(__FILE__),
+               :customer_code => 'aaaaaaaa-bbbb-cccc-dddd-aaaabbbbcccc',
+               :customer_since => Time.now.utc,
+               :is_active => true,
+               :num_of_orders => 255,
+               :partition_key => 'customer',
+               :row_key => "myRowKey#{rand(2000000).to_s}",
+               :Timestamp => Time.now.utc }
 
 	# inserts a new entity
-	service.insert_entity 'customer_table', entity
+	service.insert_entity('customer_table', entity)
 
-	# retrieves all entities from a table
+	# retrieves all entities from a table (returns a maximum of 1,000 items at one time (more details here: http://msdn.microsoft.com/en-us/library/dd135718.aspx)
+	# Remarks on development storage it retrieves all items instead the first 1,000
 	entities = service.query_entity('customer_table')
 
-	# retrieves all records that match with the specified query but only the first fifteen rows
-	service.query_entity('customer_table', "(PartitionKey eq 'customer') and (Age eq 23)", 15)
+	# retrieves more entities providing the obtained continuation_token
+	service.query_entity('customer_table', {:continuation_token => entities.continuation_token} )
 
-	# gets an existing entity by its partion_key and row_key
+	# retrieves all records that match with the specified query but only the first fifteen rows
+	service.query_entity('customer_table', {:expression => "(PartitionKey eq 'customer') and (Age eq 23)", :top => 15} )
+
+	# get an existing entity by its partion_key and row_key
 	entity = service.get_entity('customer_table', 'customer', 'rowKey1')
 
 	# updates an entity
@@ -182,7 +189,7 @@ Azure Tables REST API isn't fully covered here (see TODO's for more information)
 
 	# merges an entity (more details here: http://msdn.microsoft.com/en-us/library/dd179392.aspx)
 	entity[:fields]['Age'][:value] = 20
-	service.update_entity('customer_table', new_entity)
+	service.merge_entity('customer_table', new_entity)
 
 	# deletes an entity
 	service.delete_entity('customer_table', 'customer', 'rowKey1')

@@ -10,6 +10,7 @@ $:.unshift(File.dirname(__FILE__))
 require 'waz-storage'
 require 'waz/tables/exceptions'
 require 'waz/tables/table'
+require 'waz/tables/table_array'
 require 'waz/tables/service'
 require 'waz/tables/edm_type_helper'
 

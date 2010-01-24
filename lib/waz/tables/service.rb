@@ -19,7 +19,7 @@ module WAZ
 
         begin
           execute :post, 'Tables', {}, default_headers, payload
-          {:name => table_name, :url => "#{self.base_url}/Tables('#{table_name}"}
+          return {:name => table_name, :url => "#{self.base_url}/Tables('#{table_name}"}
         rescue RestClient::RequestFailed
           raise WAZ::Tables::TableAlreadyExists, table_name if $!.http_code == 409
         end
@@ -74,7 +74,7 @@ module WAZ
         
         begin
           response = execute(:post, table_name, {}, default_headers, generate_payload(table_name, entity))
-          return parse_entity(response)          
+          return parse_response(response)          
         rescue RestClient::RequestFailed          
           raise WAZ::Tables::EntityAlreadyExists, entity[:row_key] if $!.http_code == 409 and $!.response.body.include?('EntityAlreadyExists')          
         end     
@@ -85,7 +85,7 @@ module WAZ
       def update_entity(table_name, entity)
         raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
         response = execute(:put, "#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')", {}, default_headers.merge({'If-Match' => '*'}) , generate_payload(table_name, entity))
-        return parse_entity(response)
+        return parse_response(response)
       end
       
       # Merge an existing entity on the current storage account.
@@ -95,7 +95,7 @@ module WAZ
       def merge_entity(table_name, entity)
         raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
         response = execute(:merge, "#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')", {}, default_headers.merge({'If-Match' => '*'}), generate_payload(table_name, entity))
-        return parse_entity(response)
+        return parse_response(response)
       end
       
       # Delete an existing entity in a table.
@@ -115,26 +115,23 @@ module WAZ
       def get_entity(table_name, partition_key, row_key)
         raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
         response = execute(:get, "#{table_name}(PartitionKey='#{partition_key}',RowKey='#{row_key}')", {}, default_headers)
-        return parse_entity(response)        
+        return parse_response(response)
       end    
       
       # Retrieves a set of entities on the current storage account for a given query.
       # When the :top => n is passed it returns only the first n rows that match with the query
-      # TODO: handle specific errors
-      def query_entity(table_name, expression = nil, top = nil)
+      # Allowed options are:
+      #   <em>:expression</em> which is the filter query that will be executed against the table (see http://msdn.microsoft.com/en-us/library/dd179421.aspx for more information), 
+      #   <em>:top</em> limits the amount of fields for this query. 
+      #   <em>:continuation_token</em> the hash obtained when you perform a query that has more than 1000 records or exceeds the allowed timeout (see http://msdn.microsoft.com/en-us/library/dd135718.aspx)
+      def query_entity(table_name, options = {})
         raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
-        entities, next_partition_key, next_row_key = [], nil, nil
-        begin
-          query = {'$filter' => (expression or '') }
-          query.merge!({ '$top' => top }) unless top.nil?
-          query.merge!({ 'NextPartitionKey' => next_partition_key, 'NextRowKey' => next_row_key }) unless (next_partition_key.nil? and next_row_key.nil?)
-          response = execute :get, "#{table_name}()", query, default_headers
-          next_partition_key, next_row_key  = response.headers[:x_ms_continuation_nextpartitionkey], response.headers[:x_ms_continuation_nextrowkey]
-          entities << parse_entity(response)
-          entities.flatten!
-          break if (!top.nil? and entities.length == top)
-        end while (!next_partition_key.nil? and !next_row_key.nil?)
-        return entities
+        query = {'$filter' => (options[:expression] or '') }
+        query.merge!({ '$top' => options[:top] }) unless options[:top].nil?
+        query.merge!(options[:continuation_token]) unless options[:continuation_token].nil?
+        response = execute :get, "#{table_name}()", query, default_headers
+        continuation_token = {'NextPartitionKey' => response.headers[:x_ms_continuation_nextpartitionkey], 'NextRowKey' => response.headers[:x_ms_continuation_nextrowkey]}
+        parse_response(response, continuation_token)
       end
 
       private 
@@ -145,7 +142,9 @@ module WAZ
                      "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"#{table_name}\" href=\"#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')\" />" \
                      "<content type=\"application/xml\"><m:properties>"
 
-          entity.sort_by { |k| k.to_s }.each { |k,v| payload << (!v.nil? ? "<d:#{k.to_s} m:type=\"#{k.edm_type || EdmTypeHelper.parse_to(v)[1]}\">#{EdmTypeHelper.parse_to(v)[0].to_s}</d:#{k.to_s}>" : "<d:#{k.to_s} m:type=\"#{k.edm_type || EdmTypeHelper.parse_to(v)[1]}\" m:null=\"true\" />") unless k.eql?(:partition_key) or k.eql?(:row_key) }          
+          entity.sort_by { |k| k.to_s }.each do |k,v| 
+            payload << (!v.nil? ? "<d:#{k.to_s} m:type=\"#{k.edm_type || EdmTypeHelper.parse_to(v)[1].to_s}\">#{EdmTypeHelper.parse_to(v)[0].to_s}</d:#{k.to_s}>" : "<d:#{k.to_s} m:type=\"#{k.edm_type || EdmTypeHelper.parse_to(v)[1].to_s}\" m:null=\"true\" />") unless k.eql?(:partition_key) or k.eql?(:row_key) 
+          end  
 
           payload << "<d:PartitionKey>#{entity[:partition_key]}</d:PartitionKey>"
           payload << "<d:RowKey>#{entity[:row_key]}</d:RowKey>"
@@ -153,18 +152,17 @@ module WAZ
           return payload
         end
         
-        def parse_entity(response)
+        def parse_response(response, continuation_token = nil)
           doc = REXML::Document.new(response)
-          xpath_query = REXML::XPath.first(doc, '/feed').nil? ? '/entry' : '/feed/entry' 
-          entities = REXML::XPath.each(doc, xpath_query).map { |entry|
-            fields = REXML::XPath.each(entry.elements['content'], 'm:properties/*', {"m" => DATASERVICES_METADATA_NAMESPACE}).map { |f|
-              f.name.gsub!(/PartitionKey/i, 'partition_key')
-              f.name.gsub!(/RowKey/i, 'row_key')
-              { f.name.to_sym => EdmTypeHelper.parse_from(f) }
-            }
+          entities = REXML::XPath.each(doc, '//entry').map do |entry|
+            fields = REXML::XPath.each(entry.elements['content'], 'm:properties/*', {"m" => DATASERVICES_METADATA_NAMESPACE}).map do |f|
+              { f.name.gsub(/PartitionKey/i, 'partition_key').gsub(/RowKey/i, 'row_key').to_sym => EdmTypeHelper.parse_from(f) }
+            end
             Hash[*fields.collect {|h| h.to_a}.flatten]
-          }
-          (xpath_query == '/feed/entry') ? entities : entities.first unless entities.nil?
+          end
+          entities = WAZ::Tables::TableArray.new(entities)          
+          entities.continuation_token = continuation_token
+          return (REXML::XPath.first(doc, '/feed')) ? entities : entities.first
         end
         
         def default_headers

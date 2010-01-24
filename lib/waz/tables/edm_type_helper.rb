@@ -32,7 +32,8 @@ module WAZ
               [item, 'Edm.Boolean']
             when 'Time'
               [item.iso8601, 'Edm.DateTime']
-            when 'File'
+            when 'File', 'StringIO'
+              item.pos = 0
               [Base64.encode64(item.read), 'Edm.Binary']
             else
               [item, 'Edm.String']
