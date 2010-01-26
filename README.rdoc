@@ -136,8 +136,12 @@ Azure Tables REST API isn't fully covered here (see TODO's for more information)
 	# creates a new table
 	table = WAZ::Tables::Table.create('my-table')
 
-	# list available tables
-	WAZ::Tables::Table.list
+	# list available tables 
+	# (returns a maximum of 1,000 items at one time (more details here: http://msdn.microsoft.com/en-us/library/dd135718.aspx)
+	tables = WAZ::Tables::Table.list
+
+	# more tables
+	WAZ::Tables::Table.list(tables.continuation_token)
 
 	# get a specific table, returning nil when the specified table is not found
 	my_table = WAZ::Tables::Table.find('my-table')
@@ -170,15 +174,16 @@ Azure Tables REST API isn't fully covered here (see TODO's for more information)
 	# inserts a new entity
 	service.insert_entity('customer_table', entity)
 
-	# retrieves all entities from a table (returns a maximum of 1,000 items at one time (more details here: http://msdn.microsoft.com/en-us/library/dd135718.aspx)
+	# retrieves all entities from a table 
+	# (returns a maximum of 1,000 items at one time (more details here: http://msdn.microsoft.com/en-us/library/dd135718.aspx)
 	# Remarks on development storage it retrieves all items instead the first 1,000
-	entities = service.query_entity('customer_table')
+	entities = service.query('customer_table')
 
 	# retrieves more entities providing the obtained continuation_token
-	service.query_entity('customer_table', {:continuation_token => entities.continuation_token} )
+	service.query('customer_table', {:continuation_token => entities.continuation_token} )
 
 	# retrieves all records that match with the specified query but only the first fifteen rows
-	service.query_entity('customer_table', {:expression => "(PartitionKey eq 'customer') and (Age eq 23)", :top => 15} )
+	service.query('customer_table', {:expression => "(PartitionKey eq 'customer') and (Age eq 23)", :top => 15} )
 
 	# get an existing entity by its partion_key and row_key
 	entity = service.get_entity('customer_table', 'customer', 'rowKey1')

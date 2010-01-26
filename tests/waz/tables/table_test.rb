@@ -93,6 +93,7 @@ describe "Table object behavior" do
   end
     
   it "should raise an exception when invalid table name is provided" do
+    INVALID_TABLE_ERROR_MESSAGE = "must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"
     options = {:name => '1invalidname', :url => 'url'}
     options.stubs(:keys).returns([:name, :url])
     WAZ::Tables::Table.any_instance.stubs(:new).with(options).raises(WAZ::Storage::InvalidParameterValue)

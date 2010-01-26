@@ -124,7 +124,7 @@ module WAZ
       #   <em>:expression</em> which is the filter query that will be executed against the table (see http://msdn.microsoft.com/en-us/library/dd179421.aspx for more information), 
       #   <em>:top</em> limits the amount of fields for this query. 
       #   <em>:continuation_token</em> the hash obtained when you perform a query that has more than 1000 records or exceeds the allowed timeout (see http://msdn.microsoft.com/en-us/library/dd135718.aspx)
-      def query_entity(table_name, options = {})
+      def query(table_name, options = {})
         raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
         query = {'$filter' => (options[:expression] or '') }
         query.merge!({ '$top' => options[:top] }) unless options[:top].nil?
@@ -143,12 +143,13 @@ module WAZ
                      "<content type=\"application/xml\"><m:properties>"
 
           entity.sort_by { |k| k.to_s }.each do |k,v| 
-            payload << (!v.nil? ? "<d:#{k.to_s} m:type=\"#{k.edm_type || EdmTypeHelper.parse_to(v)[1].to_s}\">#{EdmTypeHelper.parse_to(v)[0].to_s}</d:#{k.to_s}>" : "<d:#{k.to_s} m:type=\"#{k.edm_type || EdmTypeHelper.parse_to(v)[1].to_s}\" m:null=\"true\" />") unless k.eql?(:partition_key) or k.eql?(:row_key) 
+            value, type = EdmTypeHelper.parse_to(v)[0].to_s, EdmTypeHelper.parse_to(v)[1].to_s
+            payload << (!v.nil? ? "<d:#{k.to_s} m:type=\"#{k.edm_type || type}\">#{value}</d:#{k.to_s}>" : "<d:#{k.to_s} m:type=\"#{k.edm_type || type}\" m:null=\"true\" />") unless k.eql?(:partition_key) or k.eql?(:row_key) 
           end  
 
-          payload << "<d:PartitionKey>#{entity[:partition_key]}</d:PartitionKey>"
-          payload << "<d:RowKey>#{entity[:row_key]}</d:RowKey>"
-          payload << "</m:properties></content></entry>"
+          payload << "<d:PartitionKey>#{entity[:partition_key]}</d:PartitionKey>" \
+                     "<d:RowKey>#{entity[:row_key]}</d:RowKey>" \
+                     "</m:properties></content></entry>"
           return payload
         end
         

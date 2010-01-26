@@ -4,7 +4,10 @@ module WAZ
     # available on MSDN at http://msdn.microsoft.com/en-us/library/dd179423.aspx
     #
     #	# list available tables
-    #	WAZ::Tables::Table.list
+    #	tables = WAZ::Tables::Table.list
+    #
+    #	# list more tables
+    #	WAZ::Tables::Table.list(tables.continuation_token)
     #
   	# # get a specific table
   	# my_table = WAZ::Tables::Table.find('my-table')
@@ -17,9 +20,11 @@ module WAZ
     #
     class Table
       class << self
+        INVALID_TABLE_ERROR_MESSAGE = "must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"
+        
         # Finds a table by name. It will return nil if no table was found.
         def find(table_name)
-          raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+          raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => [INVALID_TABLE_ERROR_MESSAGE]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
           begin 
             WAZ::Tables::Table.new(service_instance.get_table(table_name))
           rescue WAZ::Tables::TableDoesNotExist
@@ -29,20 +34,16 @@ module WAZ
                 
         # Returns an array of the existing tables (WAZ::Tables::Table) on the current 
         # Windows Azure Storage account.
-        def list()
-          tables, next_table_name = [], nil
-          begin
-            table_list, next_table_name = service_instance.list_tables(next_table_name)
-            table_list.each do |table|
-              tables << WAZ::Tables::Table.new({ :name => table[:name], :url => table[:url] })
-            end
-          end while next_table_name != nil and !next_table_name.empty?
-          tables
+        def list(continuation_token = {})
+            table_list, next_table_name = service_instance.list_tables(continuation_token['NextTableName'])
+            tables = TableArray.new(table_list.map { |table| WAZ::Tables::Table.new({ :name => table[:name], :url => table[:url] }) })
+            tables.continuation_token = {'NextTableName' => next_table_name} unless next_table_name.nil?
+            return tables
         end
         
         # Creates a table on the current account.
         def create(table_name)
-          raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
+          raise WAZ::Storage::InvalidParameterValue, {:name => table_name, :values => [INVALID_TABLE_ERROR_MESSAGE]} unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
           WAZ::Tables::Table.new(service_instance.create_table(table_name))
         end
         
@@ -60,7 +61,7 @@ module WAZ
       def initialize(options = {})
         raise WAZ::Storage::InvalidOption, :name unless options.keys.include?(:name) and !options[:name].empty?
         raise WAZ::Storage::InvalidOption, :url unless options.keys.include?(:url) and !options[:url].empty?        
-        raise WAZ::Storage::InvalidParameterValue, {:name => options[:name], :values => ["must start with at least one lower/upper characted, can have character or any digit starting from the second position, must be from 3 through 63 characters long"]} unless WAZ::Storage::ValidationRules.valid_table_name?(options[:name])        
+        raise WAZ::Storage::InvalidParameterValue, {:name => options[:name], :values => [INVALID_TABLE_ERROR_MESSAGE]} unless WAZ::Storage::ValidationRules.valid_table_name?(options[:name])        
         self.name = options[:name]
         self.url = options[:url]        
       end

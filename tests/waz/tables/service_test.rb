@@ -470,7 +470,7 @@ describe "tables service behavior" do
     RestClient::Request.any_instance.expects(:execute).once().returns(mock_response)
     @table_service.expects(:generate_request_uri).with("Customers()", expected_query).returns(expected_url)
     @table_service.expects(:generate_request).with(:get, expected_url, expected_headers, nil).returns(RestClient::Request.new(:method => :post, :url => expected_url, :headers => expected_headers))
-    entities = @table_service.query_entity('Customers', {:expression => 'expression'})
+    entities = @table_service.query('Customers', {:expression => 'expression'})
 
     entities.length.should == 2
     entities.continuation_token[:next_partition_key].nil?.should == true
@@ -533,7 +533,7 @@ describe "tables service behavior" do
     RestClient::Request.any_instance.expects(:execute).once().returns(mock_response)
     @table_service.expects(:generate_request_uri).once().with("Customers()", expected_query).returns(expected_url)
     @table_service.expects(:generate_request).once().with(:get, expected_url, expected_headers, nil).returns(RestClient::Request.new(:method => :post, :url => expected_url, :headers => expected_headers))
-    entities = @table_service.query_entity('Customers', {:expression => 'expression', :top => 1 })
+    entities = @table_service.query('Customers', {:expression => 'expression', :top => 1 })
 
     entities.length.should == 1
     entities.continuation_token[:next_partition_key].nil?.should == true
@@ -577,7 +577,7 @@ describe "tables service behavior" do
 
     @table_service.expects(:generate_request_uri).with("Customers()", expected_query).returns("http://myaccount.tables.core.windows.net/Customers()?$filter=expression")
     @table_service.expects(:generate_request).once().with(:get, "http://myaccount.tables.core.windows.net/Customers()?$filter=expression", expected_headers, nil).returns(rest_client)
-    entities = @table_service.query_entity('Customers', {:expression => 'expression'})
+    entities = @table_service.query('Customers', {:expression => 'expression'})
 
    entities.length.should == 1
    entities.continuation_token['NextPartitionKey'].should == 'next_partition_key_value'
@@ -609,7 +609,7 @@ describe "tables service behavior" do
   end
   
   it "should throw when invalid table name is provided" do
-    lambda { @table_service.query_entity('9existing', 'foo') }.should raise_error(WAZ::Tables::InvalidTableName)
+    lambda { @table_service.query('9existing', 'foo') }.should raise_error(WAZ::Tables::InvalidTableName)
   end
   
   it "should throw when invalid table name is provided" do
