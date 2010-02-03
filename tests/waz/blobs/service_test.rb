@@ -28,7 +28,7 @@ describe "blobs service behavior" do
     service.expects(:generate_request_uri).with("mock-container", {}).returns("mock-uri")
     service.expects(:generate_request).with(:get, "mock-uri", {}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
     properties = service.get_container_properties('mock-container')
-    properties[:x_ms_meta_Name].should == "customName"
+    properties[:x_ms_meta_name].should == "customName"
   end
   
   it "should set container properties" do

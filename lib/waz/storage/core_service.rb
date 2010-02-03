@@ -22,11 +22,11 @@ module WAZ
       def generate_request(verb, url, headers = {}, payload = nil)
         http_headers = {}
         headers.each{ |k, v| http_headers[k.to_s.gsub(/_/, '-')] = v} unless headers.nil?
-        request = RestClient::Request.new(:method => verb.to_s.downcase.to_sym, :url => url, :headers => http_headers, :payload => payload)
-        request.headers["x-ms-Date"] = Time.new.httpdate
-        request.headers["Content-Length"] = (request.payload or "").length
-        request.headers["Authorization"] = "SharedKey #{account_name}:#{generate_signature(request)}"
-        return request
+        http_headers.merge!("x-ms-Date" => Time.new.httpdate)
+        http_headers.merge!("Content-Length" => (payload or "").length)
+        request = {:headers => http_headers, :method => verb.to_s.downcase.to_sym, :url => url, :payload => payload}
+        request[:headers].merge!("Authorization" => "SharedKey #{account_name}:#{generate_signature(request)}")
+        return RestClient::Request.new(request)
       end
       
       # Generates the request uri based on the resource path, the protocol, the account name and the parameters passed
@@ -59,35 +59,35 @@ module WAZ
       # Generates the signature based on Micosoft specs for the REST API. It includes some special headers, 
       # the canonicalized header line and the canonical form of the message, all of the joined by \n character. Encoded with 
       # Base64 and encrypted with SHA256 using the access_key as the seed.
-      def generate_signature(request)
-        return generate_signature20090919(request) if request.headers["x-ms-version"] == "2009-09-19"
+      def generate_signature(options = {})
+        return generate_signature20090919(options) if options[:headers]["x-ms-version"] == "2009-09-19"
 
-        signature = request.method.to_s.upcase + "\x0A" +
-                     (request.headers["Content-MD5"] or "") + "\x0A" +
-                     (request.headers["Content-Type"] or "") + "\x0A" +
-                     (request.headers["Date"] or "")+ "\x0A"
+        signature = options[:method].to_s.upcase + "\x0A" +
+                     (options[:headers]["Content-MD5"] or "") + "\x0A" +
+                     (options[:headers]["Content-Type"] or "") + "\x0A" +
+                     (options[:headers]["Date"] or "")+ "\x0A"
 
-        signature += canonicalize_headers(request.headers) + "\x0A" unless self.type_of_service == 'table'
-        signature += canonicalize_message(request.url)
+        signature += canonicalize_headers(options[:headers]) + "\x0A" unless self.type_of_service == 'table'
+        signature += canonicalize_message(options[:url])
                      
         Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature.toutf8).digest)
       end
 
-      def generate_signature20090919(request)
-        signature = request.method.to_s.upcase + "\x0A" +
-                    (request.headers["Content-Encoding"] or "") + "\x0A" +
-                    (request.headers["Content-Language"] or "") + "\x0A" +
-                    (request.headers["Content-Length"] or "").to_s + "\x0A" +                    
-                    (request.headers["Content-MD5"] or "") + "\x0A" +
-                    (request.headers["Content-Type"] or "") + "\x0A" +
-                    (request.headers["Date"] or "")+ "\x0A" +
-                    (request.headers["If-Modified-Since"] or "")+ "\x0A" +
-                    (request.headers["If-Match"] or "")+ "\x0A" +
-                    (request.headers["If-None-Match"] or "")+ "\x0A" +                    
-                    (request.headers["If-Unmodified-Since"] or "")+ "\x0A" +
-                    (request.headers["Range"] or "")+ "\x0A" +                    
-                    canonicalize_headers(request.headers) + "\x0A" +
-                    canonicalize_message20090919(request.url)
+      def generate_signature20090919(options = {})
+        signature = options[:method].to_s.upcase + "\x0A" +
+                    (options[:headers]["Content-Encoding"] or "") + "\x0A" +
+                    (options[:headers]["Content-Language"] or "") + "\x0A" +
+                    (options[:headers]["Content-Length"] or "").to_s + "\x0A" +                    
+                    (options[:headers]["Content-MD5"] or "") + "\x0A" +
+                    (options[:headers]["Content-Type"] or "") + "\x0A" +
+                    (options[:headers]["Date"] or "")+ "\x0A" +
+                    (options[:headers]["If-Modified-Since"] or "")+ "\x0A" +
+                    (options[:headers]["If-Match"] or "")+ "\x0A" +
+                    (options[:headers]["If-None-Match"] or "")+ "\x0A" +                    
+                    (options[:headers]["If-Unmodified-Since"] or "")+ "\x0A" +
+                    (options[:headers]["Range"] or "")+ "\x0A" +                    
+                    canonicalize_headers(options[:headers]) + "\x0A" +
+                    canonicalize_message20090919(options[:url])
                     
         Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature.toutf8).digest)        
       end

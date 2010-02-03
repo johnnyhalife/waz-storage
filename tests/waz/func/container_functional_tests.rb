@@ -13,8 +13,7 @@ describe "blobs service behavior" do
                 :access_key => "Tm870FVNS14aNW1zsn13fZykc4yDKz82W8m4qujIZTayOJvhOePsjSFIsFnQF8rPnDaRJQJwzhoziI7ZtIWTsQ==" }
 
     WAZ::Storage::Base.establish_connection(options) do    
-      container = WAZ::Blobs::Container.find('momo-container')
-      container ||= WAZ::Blobs::Container.create('momo-container')
+      container = (WAZ::Blobs::Container.find('momo-container') || WAZ::Blobs::Container.create('momo-container'))
       container.nil?.should == false
     
       container.put_properties!(:x_ms_meta_owner => "Ezequiel Morito")

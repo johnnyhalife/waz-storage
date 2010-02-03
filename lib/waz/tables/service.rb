@@ -120,10 +120,11 @@ module WAZ
       
       # Retrieves a set of entities on the current storage account for a given query.
       # When the :top => n is passed it returns only the first n rows that match with the query
-      # Allowed options are:
-      #   <em>:expression</em> which is the filter query that will be executed against the table (see http://msdn.microsoft.com/en-us/library/dd179421.aspx for more information), 
-      #   <em>:top</em> limits the amount of fields for this query. 
-      #   <em>:continuation_token</em> the hash obtained when you perform a query that has more than 1000 records or exceeds the allowed timeout (see http://msdn.microsoft.com/en-us/library/dd135718.aspx)
+      # Optional parameters:
+      # * :headers a hash containing the request headers
+      # * :expression the filter query that will be executed against the table (see http://msdn.microsoft.com/en-us/library/dd179421.aspx for more information), 
+      # * :top limits the amount of fields for this query. 
+      # * :continuation_token the hash obtained when you perform a query that has more than 1000 records or exceeds the allowed timeout (see http://msdn.microsoft.com/en-us/library/dd135718.aspx)
       def query(table_name, options = {})
         raise WAZ::Tables::InvalidTableName, table_name unless WAZ::Storage::ValidationRules.valid_table_name?(table_name)
         query = {'$filter' => (options[:expression] or '') }
