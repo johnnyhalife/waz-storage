@@ -3,7 +3,7 @@ module WAZ
     module VERSION #:nodoc:
       MAJOR    = '0'
       MINOR    = '5'
-      TINY     = '7' 
+      TINY     = '8' 
     end
     
     Version = [VERSION::MAJOR, VERSION::MINOR, VERSION::TINY].compact * '.'

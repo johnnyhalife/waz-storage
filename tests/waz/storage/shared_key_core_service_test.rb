@@ -86,13 +86,17 @@ describe "storage service core behavior" do
   end
   
   it "should generate request with proper headers" do
-    mock_request = RestClient::Request.new(:method => :put, :url => "http://localhost/johnny", :payload => "payload")
     mock_time = Time.new
-    RestClient::Request.stubs(:new).with(:method => :put, :url => "http://localhost/johnny", :headers => {}, :payload => "payload").returns(mock_request)
     Time.stubs(:new).returns(mock_time)
     service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
+    
+    expected_request_hash = {:headers => {'x-ms-Date' => mock_time.httpdate, "Content-Length" => "payload".length},
+                             :method => :put, 
+                             :url => "http://localhost/johnny",
+                             :payload  => "payload"}
+    
     # mock the generate signature method since we want to assert against a know value 
-    service.expects(:generate_signature).with(mock_request).returns("a_mock_signature")
+    service.expects(:generate_signature).with(expected_request_hash).returns("a_mock_signature")
     
     request = service.generate_request("PUT", "http://localhost/johnny", nil, "payload")
     request.headers["x-ms-Date"].should == mock_time.httpdate
@@ -101,13 +105,17 @@ describe "storage service core behavior" do
   end
   
   it "should set content length when it is not provided" do
-    mock_request = RestClient::Request.new(:method => :put, :url => "http://localhost/johnny")
     mock_time = Time.new
-    RestClient::Request.stubs(:new).with(:method => :put, :url => "http://localhost/johnny", :headers => {}, :payload => nil).returns(mock_request)
     Time.stubs(:new).returns(mock_time)
     service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
+    
+    expected_request_hash = {:headers => {'x-ms-Date' => mock_time.httpdate, 'Content-Length' => 0},
+                             :method => :put, 
+                             :url => "http://localhost/johnny",
+                             :payload => nil}
+    
     # mock the generate signature method since we want to assert against a know value 
-    service.expects(:generate_signature).with(mock_request).returns("a_mock_signature")
+    service.expects(:generate_signature).with(expected_request_hash).returns("a_mock_signature")
     
     request = service.generate_request("PUT", "http://localhost/johnny", nil)
     request.headers["x-ms-Date"].should == mock_time.httpdate
@@ -116,13 +124,17 @@ describe "storage service core behavior" do
   end
   
   it "should name headers properly when they are provided as symbols" do
-    mock_request = RestClient::Request.new(:method => :put, :url => "http://localhost/johnny")
-    mock_time = Time.new
-    RestClient::Request.stubs(:new).with(:method => :put, :url => "http://localhost/johnny", :headers => {"Content-Type" => "plain/xml"}, :payload => nil).returns(mock_request)
-    Time.stubs(:new).returns(mock_time)
-    service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
-    # mock the generate signature method since we want to assert against a know value 
-    service.expects(:generate_signature).with(mock_request).returns("a_mock_signature")
+     mock_time = Time.new
+      Time.stubs(:new).returns(mock_time)
+      service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
+
+      expected_request_hash = {:headers => {'x-ms-Date' => mock_time.httpdate, "Content-Length" => 0, 'Content-Type' => "plain/xml"},
+                               :method => :put, 
+                               :url => "http://localhost/johnny",
+                               :payload  => nil}
+
+      # mock the generate signature method since we want to assert against a know value 
+      service.expects(:generate_signature).with(expected_request_hash).returns("a_mock_signature")
     
     request = service.generate_request("PUT", "http://localhost/johnny", {:Content_Type => "plain/xml"})
     request.headers["x-ms-Date"].should == mock_time.httpdate
