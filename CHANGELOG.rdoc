@@ -1,10 +1,14 @@
 = Revision History for Windows Azure Storage for Ruby
+
+=== v0.5.81 - (Johnny Halife)
+- When simulating a container using a forward slash starting the blob name it crashed with 404, now it's fixed.
+
 === v0.5.8 - (Johnny Halife)
 - Fixed an issue on the Queues Documentation (thanks @ezequielm)
 - Added _naming validation for Containers_ according to http://msdn.microsoft.com/en-us/library/dd135715.aspx (thanks @panosjee)
 - Added _naming validation for Queues_ according to http://msdn.microsoft.com/en-us/library/dd179349.aspx (thanks @panosjee)
 - Added _support for Blob snapshots_ 
-- Added support for rest-client 1.3.0.
+- Added support for rest-client 1.3.0. (thanks @jpgd)
 # WIP
 - Blobs API has been migrated to the 2009-09-19 Version of the Storage API
 

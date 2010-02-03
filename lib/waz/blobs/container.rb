@@ -114,6 +114,7 @@ module WAZ
       # the required <em>content_type</em>. <strong>The <em>options</em> parameters if provided
       # will set the default metadata properties for the blob</strong>.
       def store(blob_name, payload, content_type, options = {})
+        blob_name.gsub!(%r{^/}, '')
         self.class.service_instance.put_blob("#{self.name}/#{blob_name}", payload, content_type, options)
         return BlobObject.new(:name => blob_name, 
                               :url => self.class.service_instance.generate_request_uri("#{self.name}/#{blob_name}"),
@@ -124,6 +125,7 @@ module WAZ
       # it will return nil instead of throwing an exception.
       def [](blob_name)
         begin
+          blob_name.gsub!(%r{^/}, '')
           properties = self.class.service_instance.get_blob_properties("#{self.name}/#{blob_name}")
           return BlobObject.new(:name => blob_name, 
                                 :url => self.class.service_instance.generate_request_uri("#{self.name}/#{blob_name}"),
