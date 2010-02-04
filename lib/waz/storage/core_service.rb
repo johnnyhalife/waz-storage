@@ -11,8 +11,8 @@ module WAZ
         self.access_key = options[:access_key]
         self.type_of_service = options[:type_of_service]        
         self.use_ssl = options[:use_ssl] or false
-        self.use_devenv = (!options[:use_devenv].nil? and options[:use_devenv])
-        self.base_url = "#{options[:type_of_service] or "blobs"}.#{options[:base_url] or "core.windows.net"}" if (options[:use_devenv].nil? or !options[:use_devenv])
+        self.use_devenv = !!options[:use_devenv]
+        self.base_url = "#{options[:type_of_service] or "blobs"}.#{options[:base_url] or "core.windows.net"}" unless self.use_devenv
         self.base_url ||= (options[:base_url] or "core.windows.net") 
       end
       

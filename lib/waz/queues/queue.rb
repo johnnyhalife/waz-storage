@@ -76,7 +76,7 @@ module WAZ
         # from the default_connection on WAZ::Storage::Base initialized thru establish_connection!
         def service_instance
           options = WAZ::Storage::Base.default_connection.merge(:type_of_service => "queue")
-          (@service_instances ||= {})[:account_name] ||= Service.new(options)
+          (@service_instances ||= {})[options[:account_name]] ||= Service.new(options)
         end
       end
       
