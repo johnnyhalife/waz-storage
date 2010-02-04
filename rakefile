@@ -30,7 +30,7 @@ namespace :dist do
     s.rdoc_options      << '--line-numbers' << '--inline-source' << '-A cattr_accessor=object'
     
     # Dependencies
-    s.add_runtime_dependency 'rest-client', '>= 1.0.3'
+    s.add_dependency 'rest-client'
     s.add_dependency 'ruby-hmac'
   end
   
