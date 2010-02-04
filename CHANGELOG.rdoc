@@ -1,10 +1,10 @@
 = Revision History for Windows Azure Storage for Ruby
 
-v.unreleased (Juan Pablo Garcia Dalolla)
-- Added Entities operations on Table service to query, get_one, insert, update, merge and delete.
-- Added support for running against the storage development fabriq.
-- Added signature support for Tables service since it differs slightly from that for a request against the Blob or Queue services, according to msdn.microsoft.com/en-us/library/dd179428.aspx
-- Added Table operations to enumerate the tables in a storage account, create a new table, and delete an existing table.
+=== v1.0 - (Juan Pablo Garcia Dalolla)
+- Added support for table service to query, get_one, insert, update, merge and delete entities.
+- Added support for running against the Storage Developement Fabriq shipped with Microsoft SDK.
+- Added signature support for Tables service according to msdn.microsoft.com/en-us/library/dd179428.aspx
+- Added support to enumerate, create, and delete tables on give storage account.
 - Improved support for stacked connection management.
 
 === v0.5.81 - (Johnny Halife)
@@ -16,8 +16,6 @@ v.unreleased (Juan Pablo Garcia Dalolla)
 - Added _naming validation for Queues_ according to http://msdn.microsoft.com/en-us/library/dd179349.aspx (thanks @panosjee)
 - Added _support for Blob snapshots_ 
 - Added support for rest-client 1.3.0. (thanks @jpgd)
-# WIP
-- Blobs API has been migrated to the 2009-09-19 Version of the Storage API
 
 === v0.5.7 - (Johnny Halife)
 - Fixes a critical bug on URL management that some time prevents message from being deleted, caused by a missing encoding on the URL 	parameters.
@@ -33,7 +31,6 @@ v.unreleased (Juan Pablo Garcia Dalolla)
 - Added a Change Log
 - Added support for copy-blob [WAZ::Blobs::BlobObject.copy("container/blob_name")]
 - Refactored out the whole request logic to an _execute_ method on the SharedKeyCoreService
-# WIP
 - Added transparent support for block management (users don't know if their blob is being uploaded chunked or not)
 - Added support for a blob to list its blocks
 

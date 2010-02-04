@@ -15,6 +15,13 @@ Full documentation for the gem is available at http://waz-storage.heroku.com
 Well, this is a sum up of the whole experience of writing those gems and getting them to work together to simplify 
 end user experience. Although there're some breaking changes, it's pretty backward compatible with existing gems.
 
+=== What's new on the 1.0 version?
+- Added support for table service to query, get_one, insert, update, merge and delete entities.
+- Added support for running against the Storage Developement Fabriq shipped with Microsoft SDK.
+- Added signature support for Tables service according to msdn.microsoft.com/en-us/library/dd179428.aspx
+- Added support to enumerate, create, and delete tables on give storage account.
+- Improved support for stacked connection management.
+
 === What's new on the 0.5.81 version?
 - When simulating a container using a forward slash starting the blob name it crashed with 404, now it's fixed.
 
@@ -24,8 +31,6 @@ end user experience. Although there're some breaking changes, it's pretty backwa
 - Added _naming validation for Queues_ according to http://msdn.microsoft.com/en-us/library/dd179349.aspx (thanks @panosjee)
 - Added _support for Blob snapshots_ 
 - Added support for rest-client 1.3.0. (thanks @jpgd)
-# WIP
-- Blobs API has been migrated to the 2009-09-19 Version of the Storage API
 
 === What's new on the 0.5.7 version?
 - Fixes a critical bug on URL management that some time prevents messages from being deleted, caused by a missing encoding on the URL	parameters.
@@ -126,7 +131,7 @@ It's pretty intuitive, but full documentation (RDoc) is available for the API fo
 
 == Usage: Tables
 The tables implementation inside this gem is fully compliant with the spec available at http://msdn.microsoft.com/en-us/library/dd179423.aspx. The Windows 
-Azure Tables REST API isn't fully covered here (see TODO's for more information).
+Azure Tables REST API is fully covered here.
 
 	require 'waz-storage'
 	require 'waz-tables'
@@ -190,11 +195,11 @@ Azure Tables REST API isn't fully covered here (see TODO's for more information)
 	entity = service.get_entity('customer_table', 'customer', 'rowKey1')
 
 	# updates an entity
-	entity[:fields]['Age'][:value] = 90
+	entity[:age] = 90
 	service.update_entity('customer_table', new_entity)
 
 	# merges an entity (more details here: http://msdn.microsoft.com/en-us/library/dd179392.aspx)
-	entity[:fields]['Age'][:value] = 20
+	entity[:age] = 20
 	service.merge_entity('customer_table', new_entity)
 
 	# deletes an entity
@@ -230,8 +235,8 @@ The documentation and implementation exposed here is for the pre-release version
 As far as users start using it, I'll be building a backlog and probably handling a wish-list of features, but right now I've the following 
 TODO's already enqueued for further releases of the waz-storage API.
 
-- Implement the remaining features of Blobs (Blocks Management)
-- Generate a sample application to better show the usage.
+-Implement the remaining features of Blobs (Blocks Management)
+-Generate a sample application to better show the usage.
 
 The things listed above do not represent any sort of priority, or the order they are going to be tackled. It's just a list. 
 
