@@ -30,9 +30,9 @@ end user experience. Although there're some breaking changes, it's pretty backwa
 
 === What's new on the 0.5.8 version?
 - Fixed an issue on the Queues Documentation (thanks @ezequielm)
-- Added _naming validation for Containers_ according to http://msdn.microsoft.com/en-us/library/dd135715.aspx (thanks @panosjee)
-- Added _naming validation for Queues_ according to http://msdn.microsoft.com/en-us/library/dd179349.aspx (thanks @panosjee)
-- Added _support for Blob snapshots_ 
+- Added __naming validation for Containers__ according to http://msdn.microsoft.com/en-us/library/dd135715.aspx (thanks @panosjee)
+- Added __naming validation for Queues__ according to http://msdn.microsoft.com/en-us/library/dd179349.aspx (thanks @panosjee)
+- Added __support for Blob snapshots__ 
 - Added support for rest-client 1.3.0. (thanks @jpgd)
 
 === What's new on the 0.5.7 version?
@@ -103,7 +103,7 @@ Here's a quick getting started of the usage of the API:
 	  messages.each {|m| m.destroy!}
 	end
 	
-	# NEW! Now you can do _ensure_ and it will return the queue, first trying to retrieve it 
+	# NEW! Now you can do __ensure__ and it will return the queue, first trying to retrieve it 
 	# and then if it doesn't exist, will created it
 	queue = WAZ::Queues::Queue.ensure('my-queue')
 	
