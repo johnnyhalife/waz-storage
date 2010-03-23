@@ -31,11 +31,7 @@ module WAZ
       # Creates a queue on the current storage account. Throws WAZ::Queues::QueueAlreadyExists when 
       # existing metadata and given metadata differ.
       def create_queue(queue_name, metadata = {})
-        begin
-          execute :put, queue_name, nil, metadata.merge!(:x_ms_version => '2009-09-19')
-        rescue RestClient::RequestFailed
-          raise WAZ::Queues::QueueAlreadyExists, queue_name if $!.http_code == 409
-        end
+        execute(:put, queue_name, nil, metadata.merge!(:x_ms_version => '2009-09-19'))
       end
       
       # Deletes the given queue from the current storage account.

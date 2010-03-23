@@ -5,14 +5,15 @@ require 'rake/gempackagetask'
 require 'rake/rdoctask'
 require 'lib/waz-storage'
 
-namespace :test do
-  Spec::Rake::SpecTask.new('run_with_rcov') do |t|
-    t.spec_files = FileList['tests/waz/queues/*.rb', 'tests/waz/blobs/*.rb', 'tests/waz/tables/*.rb', 'tests/waz/storage/*.rb']
-    t.rcov = true
-    t.rcov_opts = ['--text-report', '--exclude', "exclude.*/.gem,test,Library,#{ENV['GEM_HOME']}", '--sort', 'coverage' ]
-    t.spec_opts = ['-cfn']
-  end
+task :default => [:specs]
+
+Spec::Rake::SpecTask.new('specs') do |t|
+  t.spec_files = FileList['tests/waz/blobs/*.rb', 'tests/waz/queues/*.rb', 'tests/waz/tables/*.rb', 'tests/waz/storage/*.rb']
+  t.rcov = true
+  t.rcov_opts = ['--text-report', '--exclude', "exclude.*/.gem,test,Library,#{ENV['GEM_HOME']}", '--sort', 'coverage' ]
+  t.spec_opts = ['-cfn']
 end
+
 
 namespace :dist do  
   spec = Gem::Specification.new do |s|

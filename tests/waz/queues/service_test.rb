@@ -53,23 +53,6 @@ describe "Windows Azure Queues API service" do
     service.create_queue("mock-queue", {:x_ms_meta_priority => "high-importance"})
   end
   
-  it "should raise queue already exists when there's a conflict" do
-    expected_url = "http://myaccount.queue.core.windows.net/mock-queue"
-    # generate a mock 409 Conflic Exception
-    mock_response = mock()
-    mock_response.stubs(:code).returns("409")
-    mock_request = RestClient::Request.new(:method => :get, :url => expected_url)
-    mock_request.stubs(:execute).raises(RestClient::RequestFailed, mock_response)
-
-    
-    service = WAZ::Queues::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
-    # setup mocha expectations
-    service.expects(:generate_request_uri).with("mock-queue", nil).returns(expected_url)
-    service.expects(:generate_request).with(:put, expected_url, {:x_ms_version => '2009-09-19'}, nil).returns(mock_request)
-
-    lambda{ service.create_queue("mock-queue") }.should raise_error(WAZ::Queues::QueueAlreadyExists)
-  end
-  
   it "should delete queue" do
     expected_url = "http://myaccount.queue.core.windows.net/mock-queue"
     mock_response = mock()
