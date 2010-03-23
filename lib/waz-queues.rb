@@ -1,17 +1,6 @@
-require 'time'
-require 'cgi'
-require 'base64'
-require 'rexml/document'
-require 'rexml/xpath'
-
-require 'restclient'
-require 'hmac-sha2'
-
 $:.unshift(File.dirname(__FILE__))
 require 'waz-storage'
-require 'waz/queues/exceptions'
-require 'waz/queues/message'
-require 'waz/queues/queue'
-require 'waz/queues/service'
-
+# Application Files (massive include)
+app_files = File.expand_path(File.join('lib', 'waz', 'queues', '*.rb'))
+Dir[app_files].each(&method(:load))
 

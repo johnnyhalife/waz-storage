@@ -1,11 +1,6 @@
-require 'net/http'
-
-$:.unshift(File.dirname(__FILE__))
-require 'waz/storage/base'
-require 'waz/storage/core_service'
-require 'waz/storage/exceptions'
-require 'waz/storage/version'
-require 'waz/storage/validation_rules'
+%w{time cgi base64 rexml/document rexml/xpath restclient hmac-sha2 net/http}.each(&method(:require))
+app_files = File.expand_path(File.join('lib', 'waz', 'storage', '*.rb'))
+Dir[app_files].each(&method(:load))
 
 # It will depende on which version of Ruby (or if you have Rails) 
 # but this method is required so we will add it the String class.
@@ -28,4 +23,9 @@ module Net
       RESPONSE_HAS_BODY = false
     end
   end
+end
+
+# extendes the Symbol class to assign a type to an entity field
+class Symbol
+  attr_accessor :edm_type
 end
