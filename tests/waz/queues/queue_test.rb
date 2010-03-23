@@ -187,4 +187,20 @@ describe "Queue object behavior" do
   it "should raise an exception when queue name is longer than 63" do
     lambda { WAZ::Queues::Queue.create('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')  }.should raise_error(WAZ::Storage::InvalidParameterValue)
   end
+  
+  it "should create the queue if it doesn't exists when calling ensure" do
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
+    WAZ::Queues::Queue.expects(:create).with("queue1")
+    WAZ::Queues::Queue.expects(:find).with("queue1").returns(nil)
+    
+    queue = WAZ::Queues::Queue.ensure("queue1")    
+  end
+  
+  it "should retrieve the queue if it already exists when calling ensure" do
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my-account", :access_key => "key"})
+    WAZ::Queues::Queue.expects(:create).with("queue1").never
+    WAZ::Queues::Queue.expects(:find).with("queue1").returns(mock())
+    
+    queue = WAZ::Queues::Queue.ensure("queue1")    
+  end
 end

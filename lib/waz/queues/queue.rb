@@ -71,6 +71,11 @@ module WAZ
           end
         end
         
+        # Syntax's sugar for find(:queue_name) or create(:queue_name)
+        def ensure(queue_name)
+          return (self.find(queue_name) or self.create(queue_name))
+        end
+        
         # This method is internally used by this class. It's the way we keep a single instance of the 
         # service that wraps the calls the Windows Azure Queues API. It's initialized with the values
         # from the default_connection on WAZ::Storage::Base initialized thru establish_connection!

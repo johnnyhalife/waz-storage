@@ -1,4 +1,6 @@
 = Revision History for Windows Azure Storage for Ruby
+=== v1.0 - (Johnny Halife)
+- Added syntax's sugar for ensuring a queue (get or create)
 
 === v1.0 - (Juan Pablo Garcia Dalolla)
 - Added support for table service to query, get_one, insert, update, merge and delete entities.
