@@ -81,6 +81,10 @@ Here's a quick getting started of the usage of the API:
 	WAZ::Storage::Base.establish_connection!(:account_name => account_name,
 	                                         :access_key => access_key)
 
+	# NEW! Now you can do ensure and it will return the queue, first trying to retrieve it 
+	# and then if it doesn't exist, will created it
+	queue = WAZ::Queues::Queue.ensure('my-queue')
+	
 	# excepts that the metadata for the queue changes this method behaves as PUT (create/replace)
 	# remarks: it performs a validation whether metadata changed or not (if changed HTTP 409 conflict)
 	queue = WAZ::Queues::Queue.create('my-queue')
@@ -102,12 +106,7 @@ Here's a quick getting started of the usage of the API:
 	  # visibility time out expires
 	  messages.each {|m| m.destroy!}
 	end
-	
-	# NEW! Now you can do <b>ensure</b> and it will return the queue, first trying to retrieve it 
-	# and then if it doesn't exist, will created it
-	queue = WAZ::Queues::Queue.ensure('my-queue')
-	
-
+		
 It's pretty intuitive, but full documentation (RDoc) is available for the API for further reference.
 
 == Usage: Blobs
