@@ -2,3 +2,4 @@ tests/waz/func/*.rb
 coverage
 pkg/*
 rdoc/*
+sdk/*
