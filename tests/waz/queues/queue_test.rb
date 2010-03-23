@@ -1,10 +1,6 @@
 # enabling the load of files from root (on RSpec)
 $LOAD_PATH.unshift(File.dirname(__FILE__) + '/../')
-
-require 'rubygems'
-require 'spec'
-require 'mocha'
-require 'restclient'
+require 'tests/configuration'
 require 'lib/waz-queues'
 
 describe "Queue object behavior" do
