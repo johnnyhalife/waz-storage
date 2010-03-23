@@ -16,7 +16,7 @@ Well, this is a sum up of the whole experience of writing those gems and getting
 end user experience. Although there're some breaking changes, it's pretty backward compatible with existing gems.
 
 === What's new on the 1.0.1 version?
-- Added Syntax's sugar for ensuring a queue (get or create)
+- Added Syntax's sugar for ensuring a Queue (get or create)
 
 === What's new on the 1.0 version?
 - Added support for table service to query, get_one, insert, update, merge and delete entities.
@@ -102,6 +102,11 @@ Here's a quick getting started of the usage of the API:
 	  # visibility time out expires
 	  messages.each {|m| m.destroy!}
 	end
+	
+	# NEW! Now you can do _ensure_ and it will return the queue, first trying to retrieve it 
+	# and then if it doesn't exist, will created it
+	queue = WAZ::Queues::Queue.ensure('my-queue')
+	
 
 It's pretty intuitive, but full documentation (RDoc) is available for the API for further reference.
 
