@@ -16,7 +16,7 @@ describe "Windows Azure Blobs interface API" do
     blob.metadata.should == { :x_ms_meta_name => "blob_name" }
   end
   
-  it "should put blob metadata" do
+  it "should put blob metadataa" do
     WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my_account", :access_key => "key"})
     WAZ::Blobs::Service.any_instance.expects(:set_blob_properties).with("container/blob", {:x_ms_meta_name => "blob_name"})
     blob = WAZ::Blobs::BlobObject.new(:name => "blob_name", :url => "http://localhost/container/blob", :content_type => "application/xml")  

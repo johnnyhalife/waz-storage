@@ -104,7 +104,7 @@ module WAZ
       # Generates a Windows Azure Storage call, it internally calls url generation method
       # and the request generation message.
       def execute(verb, path, query = {}, headers = {}, payload = nil)
-        url = generate_request_uri(path, query)        
+        url = generate_request_uri(path, query)
         request = generate_request(verb, url, headers, payload)
         request.execute()
       end

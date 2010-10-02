@@ -7,12 +7,12 @@ module WAZ
       
       # Creates a container on the current Windows Azure Storage account.
       def create_container(container_name)
-        execute :put, container_name
+        execute :put, container_name, {:restype => 'container'}, {:x_ms_version => '2009-09-19'}
       end
       
       # Retrieves all the properties existing on the container.
       def get_container_properties(container_name)
-        execute(:get, container_name).headers
+        execute(:get, container_name, {:restype => 'container'}, {:x_ms_version => '2009-09-19'}).headers
       end
       
       # Set the container properties (metadata). 
@@ -20,14 +20,14 @@ module WAZ
       # Remember that custom properties should be named as :x_ms_meta_{propertyName} in order
       # to have Windows Azure to persist them.
       def set_container_properties(container_name, properties = {})
-        execute :put, container_name, { :comp => 'metadata' }, properties
+        execute :put, container_name, { :restype => 'container', :comp => 'metadata' }, properties.merge!({:x_ms_version => '2009-09-19'})
       end
       
       # Retrieves the value of the :x_ms_prop_publicaccess header from the
       # container properties indicating whether the container is publicly 
       # accessible or not.
       def get_container_acl(container_name)
-        headers = execute(:get, container_name, { :comp => 'acl' }).headers
+        headers = execute(:get, container_name, { :restype => 'container', :comp => 'acl' }, {:x_ms_version => '2009-09-19'}).headers
         headers[:x_ms_prop_publicaccess].downcase == true.to_s
       end
 
@@ -37,7 +37,7 @@ module WAZ
       #
       # Default is _false_
       def set_container_acl(container_name, public_available = false)
-        execute :put, container_name, { :comp => 'acl' }, { :x_ms_prop_publicaccess => public_available.to_s }
+        execute :put, container_name, { :restype => 'container', :comp => 'acl' }, { :x_ms_prop_publicaccess => public_available.to_s, :x_ms_version => '2009-09-19' }
       end
 
       # Lists all the containers existing on the current storage account.
@@ -55,7 +55,7 @@ module WAZ
 
       # Deletes the given container from the Windows Azure Storage account.
       def delete_container(container_name)
-        execute :delete, container_name
+        execute :delete, container_name, {:restype => 'container'}, {:x_ms_version => '2009-09-19'}
       end
 
       # Lists all the blobs inside the given container.
@@ -95,12 +95,12 @@ module WAZ
             
       # Retrieves the properties associated with the blob at the given path.
       def get_blob_properties(path, options = {})
-        execute(:head, path, options).headers
+        execute(:head, path, options, {:x_ms_version => "2009-09-19"}).headers
       end
 
       # Sets the properties (metadata) associated to the blob at given path.
       def set_blob_properties(path, properties ={})
-        execute :put, path, { :comp => 'metadata' }, properties
+        execute :put, path, { :comp => 'properties' }, properties.merge({:x_ms_version => "2009-09-19"})
       end
       
       # Copies a blob within the same account (not necessarily to the same container)
