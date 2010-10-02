@@ -1,5 +1,8 @@
 = Revision History for Windows Azure Storage for Ruby
-=== v1.0 - (Johnny Halife)
+=== v1.0.2 - (Johnny Halife)
+- Completed Blobs API migration to 2009-09-19, _fully supporting_ what third-party tools does (e.g. Cerebrata) [thanks percent20] 
+
+=== v1.0.1 - (Johnny halife)
 - Added syntax's sugar for ensuring a queue (get or create)
 
 === v1.0 - (Juan Pablo Garcia Dalolla)
