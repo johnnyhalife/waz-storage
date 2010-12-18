@@ -1,4 +1,7 @@
 = Revision History for Windows Azure Storage for Ruby
+=== v1.0.3 - (Johnny Halife)
+- Merged with sriramk fix for loading path issues on some environments
+
 === v1.0.2 - (Johnny Halife)
 - Completed Blobs API migration to 2009-09-19, _fully supporting_ what third-party tools does (e.g. Cerebrata) [thanks percent20] 
 
