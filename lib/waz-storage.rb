@@ -1,5 +1,5 @@
 %w{time cgi base64 rexml/document rexml/xpath restclient hmac-sha2 net/http}.each(&method(:require))
-app_files = File.expand_path(File.join('lib', 'waz', 'storage', '*.rb'))
+app_files = File.expand_path(File.join(File.dirname(__FILE__), 'waz', 'storage', '*.rb'))
 Dir[app_files].each(&method(:load))
 
 # It will depende on which version of Ruby (or if you have Rails) 
