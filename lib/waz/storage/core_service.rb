@@ -34,7 +34,7 @@ module WAZ
       def generate_request_uri(path = nil, options = {})
         protocol = use_ssl ? "https" : "http"
         query_params = options.keys.sort{ |a, b| a.to_s <=> b.to_s}.map{ |k| "#{k.to_s.gsub(/_/, '')}=#{CGI.escape(options[k].to_s)}"}.join("&") unless options.nil? or options.empty?
-        uri = "#{protocol}://#{base_url}/#{account_name}#{(path or "").start_with?("/") ? "" : "/"}#{(path or "")}" if !self.use_devenv.nil? and self.use_devenv
+        uri = "#{protocol}://#{base_url}/#{path.start_with?(account_name) ? "" : account_name }#{((path or "").start_with?("/") or path.start_with?(account_name)) ? "" : "/"}#{(path or "")}" if !self.use_devenv.nil? and self.use_devenv
         uri ||= "#{protocol}://#{account_name}.#{base_url}#{(path or "").start_with?("/") ? "" : "/"}#{(path or "")}" 
         uri << "?#{query_params}" if query_params
         return uri
