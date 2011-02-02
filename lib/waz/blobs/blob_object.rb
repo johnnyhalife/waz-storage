@@ -77,6 +77,12 @@ module WAZ
         raise WAZ::Blobs::InvalidOperation if self.snapshot_date
         self.class.service_instance.set_blob_properties(path, properties)
       end
+
+      # Stores blob metadata. User metadata must be prefixed with 'x-ms-meta-'. The advantage of this over put_properties
+      # is that it only affect user_metadata and doesn't overwrite any system values, like 'content_type'.
+      def put_metadata!(metadata = {})  
+        self.class.service_instance.set_blob_metadata(path, metadata)
+      end 
       
       # Removes the blob from the container.
       def destroy!

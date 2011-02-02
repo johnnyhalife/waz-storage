@@ -103,6 +103,11 @@ module WAZ
         execute :put, path, { :comp => 'properties' }, properties.merge({:x_ms_version => "2009-09-19"})
       end
       
+      # Set user defined metadata - overwrites any previous metadata key:value pairs
+      def set_blob_metadata(path, metadata = {}) 
+        execute :put, path, { :comp => 'metadata' }, metadata.merge({:x_ms_version => "2009-09-19"})
+      end 
+
       # Copies a blob within the same account (not necessarily to the same container)
       def copy_blob(source_path, dest_path)
         execute :put, dest_path, nil, { :x_ms_version => "2009-09-19", :x_ms_copy_source => canonicalize_message(source_path) }
