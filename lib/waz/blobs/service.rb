@@ -60,13 +60,14 @@ module WAZ
 
       # Lists all the blobs inside the given container.
       def list_blobs(container_name)
-        content = execute(:get, container_name, { :comp => 'list'})
+        content = execute(:get, container_name, { :restype => 'container', :comp => 'list'}, {:x_ms_version => '2009-09-19'})
         doc = REXML::Document.new(content)
         containers = []
         REXML::XPath.each(doc, '//Blob/') do |item|
           containers << { :name => REXML::XPath.first(item, "Name").text,
                           :url => REXML::XPath.first(item, "Url").text,
-                          :content_type =>  REXML::XPath.first(item, "ContentType").text }
+                          :content_type =>  REXML::XPath.first(item.elements["Properties"], "Content-Type").text }
+
         end
         return containers
       end
