@@ -23,7 +23,7 @@ module WAZ
         http_headers = {}
         headers.each{ |k, v| http_headers[k.to_s.gsub(/_/, '-')] = v} unless headers.nil?
         http_headers.merge!("x-ms-Date" => Time.new.httpdate)
-        http_headers.merge!("Content-Length" => (payload or "").length)
+        http_headers.merge!("Content-Length" => (payload or "").size)
         request = {:headers => http_headers, :method => verb.to_s.downcase.to_sym, :url => url, :payload => payload}
         request[:headers].merge!("Authorization" => "SharedKey #{account_name}:#{generate_signature(request)}")
         return RestClient::Request.new(request)
@@ -69,8 +69,8 @@ module WAZ
 
         signature += canonicalize_headers(options[:headers]) + "\x0A" unless self.type_of_service == 'table'
         signature += canonicalize_message(options[:url])
-                     
-        Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature.toutf8).digest)
+        signature = signature.toutf8 if(signature.respond_to? :toutf8)
+        Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature).digest)
       end
 
       def generate_signature20090919(options = {})
@@ -88,8 +88,9 @@ module WAZ
                     (options[:headers]["Range"] or "")+ "\x0A" +                    
                     canonicalize_headers(options[:headers]) + "\x0A" +
                     canonicalize_message20090919(options[:url])
-                    
-        Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature.toutf8).digest)        
+
+        signature = signature.toutf8 if(signature.respond_to? :toutf8)
+        Base64.encode64(HMAC::SHA256.new(Base64.decode64(self.access_key)).update(signature).digest)
       end
       
       def canonicalize_message20090919(url)
