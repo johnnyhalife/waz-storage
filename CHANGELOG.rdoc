@@ -1,4 +1,7 @@
 = Revision History for Windows Azure Storage for Ruby
+=== v1.0.5 - (tomconte)
+- Fixed for list_blobs as it wasn't fully merged to 2009-09-19. Now it works without 403 exceptions
+
 === v1.0.3 - (Johnny Halife)
 - Merged with sriramk fix for loading path issues on some environments
 
