@@ -15,9 +15,11 @@ module WAZ
         #
 				# All other parameters are optional.
 				def establish_connection!(options = {})
-					raise InvalidOption, :account_name unless options.keys.include? :account_name
-					raise InvalidOption, :access_key unless options.keys.include? :access_key
-					options[:use_ssl] = false unless options.keys.include? :use_ssl
+					raise InvalidOption, :account_name unless options.keys.include? :account_name 
+					raise InvalidOption, :access_key if !options.keys.include? :use_sas_auth_only unless options.keys.include? :access_key 
+  				        raise InvalidOption, :use_sas_auth_only if !options.keys.include? :access_key unless options.keys.include? :use_sas_auth_only 
+ 					raise InvalidOption, :sharedaccesssignature if !options.keys.include? :access_key unless options.keys.include? :sharedaccesssignature and options.keys.include? :use_sas_auth_only
+  				        options[:use_ssl] = false unless options.keys.include? :use_ssl
 					(@connections ||= []) << options
 				end
 				
