@@ -1,14 +1,17 @@
 require 'rake'
 require 'rubygems'
-require 'spec/rake/spectask'
+#require 'spec/rake/spectask'
+require 'rspec/core/rake_task'
 require 'rake/gempackagetask'
 require 'rake/rdoctask'
 require 'lib/waz-storage'
 
 task :default => [:specs]
 
-Spec::Rake::SpecTask.new('specs') do |t|
-  t.spec_files = FileList['tests/waz/blobs/*.rb', 'tests/waz/queues/*.rb', 'tests/waz/tables/*.rb', 'tests/waz/storage/*.rb']
+#Spec::Rake::SpecTask.new('specs') do |t|
+RSpec::Core::RakeTask.new('specs') do |t|
+  #t.spec_files = FileList['tests/waz/blobs/*.rb', 'tests/waz/queues/*.rb', 'tests/waz/tables/*.rb', 'tests/waz/storage/*.rb']
+  t.pattern = "tests/waz/{blobs,queues,tables,storage}/**/*.rb"
   t.rcov = true
   t.rcov_opts = ['--text-report', '--exclude', "exclude.*/.gem,test,Library,#{ENV['GEM_HOME']}", '--sort', 'coverage' ]
   t.spec_opts = ['-cfn']
