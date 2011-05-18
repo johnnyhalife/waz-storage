@@ -3,10 +3,14 @@ module WAZ
     # This module is imported by the specific services that use Shared Key authentication profile. On the current implementation
     # this module is imported from WAZ::Queues::Service and WAZ::Blobs::Service.
     module SharedKeyCoreService
-      attr_accessor :account_name, :access_key, :use_ssl, :base_url, :type_of_service, :use_devenv
+      attr_accessor :account_name, :access_key, :use_ssl, :base_url, :type_of_service, :use_devenv, :use_sas_auth_only, :sharedaccesssignature
       
       # Creates an instance of the implementor service (internally used by the API).
       def initialize(options = {})
+        # Flag to define the use of shared access signature only
+        self.use_sas_auth_only = options[:use_sas_auth_only] or false
+        self.sharedaccesssignature = options[:sharedaccesssignature] 
+
         self.account_name = options[:account_name]
         self.access_key = options[:access_key]
         self.type_of_service = options[:type_of_service]        
@@ -25,7 +29,7 @@ module WAZ
         http_headers.merge!("x-ms-Date" => Time.new.httpdate)
         http_headers.merge!("Content-Length" => (payload or "").size)
         request = {:headers => http_headers, :method => verb.to_s.downcase.to_sym, :url => url, :payload => payload}
-        request[:headers].merge!("Authorization" => "SharedKey #{account_name}:#{generate_signature(request)}")
+        request[:headers].merge!("Authorization" => "SharedKey #{account_name}:#{generate_signature(request)}") unless self.use_sas_auth_only 
         return RestClient::Request.new(request)
       end
       
@@ -36,7 +40,11 @@ module WAZ
         query_params = options.keys.sort{ |a, b| a.to_s <=> b.to_s}.map{ |k| "#{k.to_s.gsub(/_/, '')}=#{CGI.escape(options[k].to_s)}"}.join("&") unless options.nil? or options.empty?
         uri = "#{protocol}://#{base_url}/#{path.start_with?(account_name) ? "" : account_name }#{((path or "").start_with?("/") or path.start_with?(account_name)) ? "" : "/"}#{(path or "")}" if !self.use_devenv.nil? and self.use_devenv
         uri ||= "#{protocol}://#{account_name}.#{base_url}#{(path or "").start_with?("/") ? "" : "/"}#{(path or "")}" 
-        uri << "?#{query_params}" if query_params
+        if self.use_sas_auth_only 
+          uri << "?#{self.sharedaccesssignature.gsub(/\?/,'')}" 
+	else
+          uri << "?#{query_params}" if query_params
+        end        
         return uri
       end
       

@@ -145,6 +145,21 @@ I've been doing lot of testing around and it works seamlessly with the current W
 
 It's pretty intuitive, but full documentation (RDoc) is available for the API for further reference.	
 
+=== Using Blob with Shared Acess Signature
+This feature allow to access a blob only with the information of the blob's name, the container, and the Shared Access Signature. If you don't have permission to perform an action (for example: list the blobs, create a new blob or something like that) you will receive an exception. If you want more details about this: http://msdn.microsoft.com/en-us/library/ee395415.aspx  
+
+	require 'waz-blobs'
+	
+	WAZ::Storage::Base.establish_connection!(:account_name=> 'mysharedblob', 
+						:use_sas_auth_only=> true,
+						 :sharedaccesssignature =>"?se=XXXXXX&sr=c&si=XXXXX&sig=XXXXXXXXXXXXXXXXXXXXX")
+
+	container = WAZ::Blobs::Container.new(:name=>'container')
+
+	blob = container.store('myfile.txt',File.read('fileofthecontent.txt'),'plain/text')
+
+The feature was only tested storing a blob.
+
 == Usage: Tables
 The tables implementation inside this gem is fully compliant with the spec available at http://msdn.microsoft.com/en-us/library/dd179423.aspx. The Windows 
 Azure Tables REST API is fully covered here.
