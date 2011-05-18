@@ -1,6 +1,6 @@
 require 'rubygems'
-%w{rspec mocha restclient time hmac-sha2 base64}.each(&method(:require))
+%w{rspec rspec/autorun mocha restclient time hmac-sha2 base64}.each(&method(:require))
 
-Spec::Runner.configure do |config|
+RSpec.configure do |config|
   config.mock_with :mocha
 end
