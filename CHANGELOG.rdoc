@@ -1,4 +1,16 @@
 = Revision History for Windows Azure Storage for Ruby
+=== v1.0.7 - (smarx)
+- Upload from stream, plus XML/URI escaping in various places, and a few other minor fixes 
+- Add upload method to container
+- Add put_block_list to support upload
+- Fix message canonicalization of ?comp= parameters for versions prior to 2009-09-19 (seems put_block was broken)
+- Unescape query string parameters when constructing signatures (needed for put_block, since some base64-encoded names include non-URI-friendly characters)
+- XML-escape property values for table entities (needed to insert things containing &, <, etc.)
+- Remove Unicode characters from rakefile (was breaking something on Windows)
+- Add tests for put_block_list and upload
+- Fix tests for content type (typo, = instead of .should ==)
+- Fix tests using RestClient.beautify_headers (expects an array, not a scalar)
+
 === v1.0.6 - (hermes.logicalbricks)
 - Update tests to rspec 2.5.0
 - Allow authorization using only SharedAccessSignature 

@@ -15,6 +15,18 @@ Full documentation for the gem is available at http://waz-storage.heroku.com
 Well, this is a sum up of the whole experience of writing those gems and getting them to work together to simplify 
 end user experience. Although there're some breaking changes, it's pretty backward compatible with existing gems.
 
+=== What's new on the v1.0.7 version? [thanks to smarx]
+- Upload from stream, plus XML/URI escaping in various places, and a few other minor fixes 
+- Add upload method to container
+- Add put_block_list to support upload
+- Fix message canonicalization of ?comp= parameters for versions prior to 2009-09-19 (seems put_block was broken)
+- Unescape query string parameters when constructing signatures (needed for put_block, since some base64-encoded names include non-URI-friendly characters)
+- XML-escape property values for table entities (needed to insert things containing &, <, etc.)
+- Remove Unicode characters from rakefile (was breaking something on Windows)
+- Add tests for put_block_list and upload
+- Fix tests for content type (typo, = instead of .should ==)
+- Fix tests using RestClient.beautify_headers (expects an array, not a scalar)
+
 === What's new on the v1.0.6 version? [thanks to hermes.logicalbricks]
 - Update tests to rspec 2.5.0
 - Allow authorization using only SharedAccessSignature
@@ -270,7 +282,6 @@ The documentation and implementation exposed here is for the pre-release version
 As far as users start using it, I'll be building a backlog and probably handling a wish-list of features, but right now I've the following 
 TODO's already enqueued for further releases of the waz-storage API.
 
--Implement the remaining features of Blobs (Blocks Management)
 -Generate a sample application to better show the usage.
 
 The things listed above do not represent any sort of priority, or the order they are going to be tackled. It's just a list. 
