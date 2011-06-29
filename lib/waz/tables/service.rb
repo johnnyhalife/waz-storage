@@ -139,17 +139,17 @@ module WAZ
         def generate_payload(table_name, entity)
           payload = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>" \
                      "<entry xmlns:d=\"#{DATASERVICES_NAMESPACE}\" xmlns:m=\"#{DATASERVICES_METADATA_NAMESPACE}\" xmlns=\"http://www.w3.org/2005/Atom\">" \
-                     "<id>#{generate_request_uri "#{table_name}"}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')</id>" \
-                     "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"#{table_name}\" href=\"#{table_name}(PartitionKey='#{entity[:partition_key]}',RowKey='#{entity[:row_key]}')\" />" \
+                     "<id>#{generate_request_uri "#{table_name}"}(PartitionKey='#{REXML::Text.new(entity[:partition_key], false, nil, false).to_s}',RowKey='#{REXML::Text.new(entity[:row_key], false, nil, false).to_s}')</id>" \
+                     "<title /><updated>#{Time.now.utc.iso8601}</updated><author><name /></author><link rel=\"edit\" title=\"#{table_name}\" href=\"#{table_name}(PartitionKey='#{REXML::Text.new(entity[:partition_key], false, nil, false).to_s}',RowKey='#{REXML::Text.new(entity[:row_key], false, nil, false).to_s}')\" />" \
                      "<content type=\"application/xml\"><m:properties>"
 
           entity.sort_by { |k| k.to_s }.each do |k,v| 
             value, type = EdmTypeHelper.parse_to(v)[0].to_s, EdmTypeHelper.parse_to(v)[1].to_s
-            payload << (!v.nil? ? "<d:#{k.to_s} m:type=\"#{k.edm_type || type}\">#{value}</d:#{k.to_s}>" : "<d:#{k.to_s} m:type=\"#{k.edm_type || type}\" m:null=\"true\" />") unless k.eql?(:partition_key) or k.eql?(:row_key) 
+            payload << (!v.nil? ? "<d:#{k.to_s} m:type=\"#{k.edm_type || type}\">#{REXML::Text.new(value, false, nil, false).to_s}</d:#{k.to_s}>" : "<d:#{k.to_s} m:type=\"#{k.edm_type || type}\" m:null=\"true\" />") unless k.eql?(:partition_key) or k.eql?(:row_key) 
           end  
 
-          payload << "<d:PartitionKey>#{entity[:partition_key]}</d:PartitionKey>" \
-                     "<d:RowKey>#{entity[:row_key]}</d:RowKey>" \
+          payload << "<d:PartitionKey>#{REXML::Text.new(entity[:partition_key], false, nil, false).to_s}</d:PartitionKey>" \
+                     "<d:RowKey>#{REXML::Text.new(entity[:row_key], false, nil, false).to_s}</d:RowKey>" \
                      "</m:properties></content></entry>"
           return payload
         end
