@@ -44,7 +44,7 @@ end
 namespace :docs do
   Rake::RDocTask.new do |t|
   	t.rdoc_dir = 'rdoc'
-  	t.title    = "Windows Azure Storage library — simple gem for accessing WAZ‘s Storage REST API"
+  	t.title    = "Windows Azure Storage library - simple gem for accessing WAZ's Storage REST API"
   	t.options << '--line-numbers' << '--inline-source' << '-A cattr_accessor=object'
   	t.options << '--charset' << 'utf-8'
   	t.rdoc_files.include('README.rdoc')

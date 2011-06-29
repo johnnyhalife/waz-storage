@@ -83,7 +83,19 @@ module WAZ
         default_headers = {"Content-Type" => content_type, :x_ms_version => "2009-09-19", :x_ms_blob_type => "BlockBlob"}
         execute :put, path, nil, metadata.merge(default_headers), payload
       end
-      
+
+      # Commits a list of blocks to the given blob.
+      #
+      # blockids is a list of valid, already-uploaded block IDs (base64-encoded)
+      #
+      # content_type is required by the blobs api, but on this method is defaulted to "application/octect-stream"
+      #
+      # metadata is a hash that stores all the properties that you want to add to the blob when creating it.
+      def put_block_list(path, blockids, content_type = "application/octet-stream", metadata = {})
+        default_headers = {"Content-Type" => content_type, :x_ms_version => "2009-09-19"}
+        execute :put, path, { :comp => 'blocklist' }, metadata.merge(default_headers), '<?xml version="1.0" encoding="utf-8"?><BlockList>' + blockids.map {|id| "<Latest>#{id.rstrip}</Latest>"}.join + '</BlockList>'
+      end
+
       # Retrieves a blob (content + headers) from the current path.
       def get_blob(path, options = {})
         execute :get, path, options, {:x_ms_version => "2009-09-19"}

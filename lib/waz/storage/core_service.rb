@@ -58,7 +58,7 @@ module WAZ
       # Creates a canonical representation of the message by combining account_name/resource_path.
       def canonicalize_message(url)
         uri_component = url.gsub(/https?:\/\/[^\/]+\//i, '').gsub(/\?.*/i, '')
-        comp_component = url.scan(/(comp=[^&]+)/i).first()
+        comp_component = url.scan(/comp=[^&]+/i).first()
         uri_component << "?#{comp_component}" if comp_component
         canonicalized_message = "/#{self.account_name}/#{uri_component}"
         return canonicalized_message
@@ -104,7 +104,7 @@ module WAZ
       def canonicalize_message20090919(url)
         uri_component = url.gsub(/https?:\/\/[^\/]+\//i, '').gsub(/\?.*/i, '')
         query_component = (url.scan(/\?(.*)/i).first() or []).first()
-        query_component = query_component.split('&').sort{|a, b| a <=> b}.map{ |p| p.split('=').join(':') }.join("\n") if query_component
+        query_component = query_component.split('&').sort{|a, b| a <=> b}.map{ |p| CGI::unescape(p.split('=').join(':')) }.join("\n") if query_component
         canonicalized_message = "/#{self.account_name}/#{uri_component}"
         canonicalized_message << "\n#{query_component}" if query_component
         return canonicalized_message

@@ -120,6 +120,22 @@ module WAZ
                               :url => self.class.service_instance.generate_request_uri("#{self.name}/#{blob_name}"),
                               :content_type => content_type)
       end
+
+      # Uploads the contents of a stream to the specified blob within this container, using
+      # the required <em>content_type</em>. The stream will be uploaded in blocks of size
+      # <em>block_size</em> bytes, which defaults to four megabytes. <strong>The <em>options</em>
+      # parameter, if provided, will set the default metadata properties for the blob</strong>.
+      def upload(blob_name, stream, content_type, options = {}, block_size = 4 * 2**20)
+        blob_name.gsub!(%r{^/}, '')
+        path = "#{self.name}/#{blob_name}"
+        n = 0
+        until stream.eof?
+          self.class.service_instance.put_block path, Base64.encode64('%064d' % n), stream.read(block_size)
+          n += 1
+        end
+        self.class.service_instance.put_block_list path, (0...n).map{|id| Base64.encode64('%064d' % id)}, content_type, options
+        return BlobObject.new(:name => blob_name, :url => self.class.service_instance.generate_request_uri("#{self.name}/#{blob_name}"), :content_type => content_type)
+      end
       
       # Retrieves the blob by the given name. If the blob isn't found on the current container
       # it will return nil instead of throwing an exception.
