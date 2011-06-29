@@ -1,5 +1,5 @@
 = Revision History for Windows Azure Storage for Ruby
-=== v1.0.7 - (smarx)
+=== v1.1 - (smarx)
 - Upload from stream, plus XML/URI escaping in various places, and a few other minor fixes 
 - Add upload method to container
 - Add put_block_list to support upload
