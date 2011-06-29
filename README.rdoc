@@ -290,7 +290,7 @@ The things listed above do not represent any sort of priority, or the order they
 
 Written by Johnny G. Halife (johnny.halife at me dot com)
 
-contributed by: Ezequiel Morito (http://twitter.com/ezequielm) and Juan Pablo Garcia (http://twitter.com/jpgd)
+contributed by: Ezequiel Morito (http://twitter.com/ezequielm), Juan Pablo Garcia (http://twitter.com/jpgd), Steve Marx (http://twitter.com/smarx)
 
 Released under the MIT License: http://www.opensource.org/licenses/mit-license.php
 
