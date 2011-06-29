@@ -97,9 +97,21 @@ describe "Windows Azure Containers interface API" do
     blob = container.store("my_blob", "this is the blob content", "text/plain; charset=UTF-8", {:x_ms_meta_custom_property => "customValue"})
     blob.name.should == "my_blob"
     blob.url.should == "http://my_account.blob.core.windows.net/container-name/my_blob"
-    blob.content_type = "text/plain; charset=UTF-8"
+    blob.content_type.should == "text/plain; charset=UTF-8"
   end
-  
+
+  it "should be able to upload a stream to a blob inside a given container" do
+    WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my_account", :access_key => "key"})
+    WAZ::Blobs::Service.any_instance.expects(:get_container_properties).with("container-name").returns({:x_ms_meta_name => "container-name"})
+    WAZ::Blobs::Service.any_instance.expects(:put_block).with("container-name/my_blob", Base64.encode64('%064d' % 0), "this is the blob content")
+    WAZ::Blobs::Service.any_instance.expects(:put_block_list).with("container-name/my_blob", [Base64.encode64('%064d' % 0)], "text/plain; charset=UTF-8", {:x_ms_meta_custom_property => "customValue"})
+    container = WAZ::Blobs::Container.find("container-name")
+    blob = container.upload("my_blob", StringIO.new("this is the blob content"), "text/plain; charset=UTF-8", {:x_ms_meta_custom_property => "customValue"})
+    blob.name.should == "my_blob"
+    blob.url.should == "http://my_account.blob.core.windows.net/container-name/my_blob"
+    blob.content_type.should == "text/plain; charset=UTF-8"
+  end
+
   it "should be able to put blob inside given container (when simulating fake containers)" do
     WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my_account", :access_key => "key"})
     WAZ::Blobs::Service.any_instance.expects(:get_container_properties).with("container-name").returns({:x_ms_meta_name => "container-name"})
@@ -108,7 +120,7 @@ describe "Windows Azure Containers interface API" do
     blob = container.store("/fake-container/blob", "this is the blob content", "text/plain; charset=UTF-8", {:x_ms_meta_custom_property => "customValue"})
     blob.name.should == "fake-container/blob"
     blob.url.should == "http://my_account.blob.core.windows.net/container-name/fake-container/blob"
-    blob.content_type = "text/plain; charset=UTF-8"
+    blob.content_type.should == "text/plain; charset=UTF-8"
   end
   
   it "should return a specific blob for the given container" do
