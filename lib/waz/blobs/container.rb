@@ -97,22 +97,14 @@ module WAZ
       
       # Retuns a value indicating whether the container is public accessible (i.e. from a Web Browser) or not.
       def public_access?
-        !self.class.service_instance.get_container_acl(self.name).nil?
+        self.class.service_instance.get_container_acl(self.name)
       end
       
       # Sets a value indicating whether the container is public accessible (i.e. from a Web Browser) or not.  
       def public_access=(value)
-        self.class.service_instance.set_container_acl(self.name, value ? 'container' : nil)
-      end
-      
-      def publicity
-        self.class.service_instance.get_container_acl(self.name)
-      end
-
-      def publicity=(value)
         self.class.service_instance.set_container_acl(self.name, value)
       end
-
+      
       # Returns a list of blobs (WAZ::Blobs::BlobObject) contained on the current container.
       def blobs
         self.class.service_instance.list_blobs(name).map { |blob| WAZ::Blobs::BlobObject.new(blob) }
@@ -158,6 +150,11 @@ module WAZ
           return nil
         end
       end
+    end
+    class BlobSecurity
+      Container = 'container'
+      Blob = 'blob'
+      Private = ''
     end
   end
 end

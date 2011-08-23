@@ -36,9 +36,9 @@ module WAZ
       # accessible or not.
       #
       # Default is _false_
-      def set_container_acl(container_name, public_available = false)
+      def set_container_acl(container_name, public_available = WAZ::Blobs::BlobSecurity::Private)
         publicity = {:x_ms_version => '2009-09-19' }
-        publicity[:x_ms_blob_public_access] = public_available unless public_available.nil?
+        publicity[:x_ms_blob_public_access] = public_available unless public_available == WAZ::Blobs::BlobSecurity::Private
         execute :put, container_name, { :restype => 'container', :comp => 'acl' }, publicity
       end
 
