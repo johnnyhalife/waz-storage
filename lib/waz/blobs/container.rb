@@ -100,7 +100,7 @@ module WAZ
         self.class.service_instance.get_container_acl(self.name)
       end
       
-      # Sets a value indicating whether the container is public accessible (i.e. from a Web Browser) or not.      
+      # Sets a value indicating whether the container is public accessible (i.e. from a Web Browser) or not.  
       def public_access=(value)
         self.class.service_instance.set_container_acl(self.name, value)
       end
@@ -150,6 +150,11 @@ module WAZ
           return nil
         end
       end
+    end
+    class BlobSecurity
+      Container = 'container'
+      Blob = 'blob'
+      Private = ''
     end
   end
 end

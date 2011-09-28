@@ -28,7 +28,7 @@ module WAZ
       # accessible or not.
       def get_container_acl(container_name)
         headers = execute(:get, container_name, { :restype => 'container', :comp => 'acl' }, {:x_ms_version => '2009-09-19'}).headers
-        headers[:x_ms_prop_publicaccess].downcase == true.to_s
+        headers[:x_ms_blob_public_access]
       end
 
       # Sets the value of the :x_ms_prop_publicaccess header from the
@@ -36,8 +36,10 @@ module WAZ
       # accessible or not.
       #
       # Default is _false_
-      def set_container_acl(container_name, public_available = false)
-        execute :put, container_name, { :restype => 'container', :comp => 'acl' }, { :x_ms_prop_publicaccess => public_available.to_s, :x_ms_version => '2009-09-19' }
+      def set_container_acl(container_name, public_available = WAZ::Blobs::BlobSecurity::Private)
+        publicity = {:x_ms_version => '2009-09-19' }
+        publicity[:x_ms_blob_public_access] = public_available unless public_available == WAZ::Blobs::BlobSecurity::Private
+        execute :put, container_name, { :restype => 'container', :comp => 'acl' }, publicity
       end
 
       # Lists all the containers existing on the current storage account.
