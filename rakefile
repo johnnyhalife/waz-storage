@@ -1,44 +1,14 @@
-require 'rake'
-require 'rubygems'
+#!/usr/bin/env rake
 require 'rspec/core/rake_task'
-require 'rake/gempackagetask'
 require 'rake/rdoctask'
-require 'lib/waz-storage'
-
-task :default => [:specs]
+require 'bundler/gem_tasks'
 
 RSpec::Core::RakeTask.new do |t|
   t.name = :specs
-  t.pattern = "tests/**/*.rb"
+  t.pattern = "tests/**/*_test.rb"
   t.rcov = true
   t.rcov_opts = ['--text-report', '--exclude', "exclude.*/.gem,test,Library,#{ENV['GEM_HOME']}", '--sort', 'coverage' ]
   t.rspec_opts = ['-cfn']
-end
-
-
-namespace :dist do  
-  spec = Gem::Specification.new do |s|
-    s.name              = 'waz-storage'
-    s.version           = Gem::Version.new(WAZ::Storage::Version)
-    s.summary           = "Client library for Windows Azure's Storage Service REST API"
-    s.description       = "A simple implementation of Windows Azure Storage API for Ruby, inspired by the S3 gems and self experience of dealing with queues. The major goal of the whole gem is to enable ruby developers [like me =)] to leverage Windows Azure Storage features and have another option for cloud storage."
-    s.email             = 'johnny.halife@me.com'
-    s.author            = 'Johnny G. Halife'
-    s.homepage          = 'http://waz-storage.heroku.com'
-    s.require_paths     = ["lib"]
-    s.files             = FileList['rakefile', 'lib/**/*.rb']
-    s.test_files        = Dir['test/**/*']
-    s.has_rdoc          = true
-    s.rdoc_options      << '--line-numbers' << '--inline-source' << '-A cattr_accessor=object'
-    
-    # Dependencies
-    s.add_dependency 'rest-client'
-    s.add_dependency 'ruby-hmac'
-  end
-  
-  Rake::GemPackageTask.new(spec) do |pkg|
-    pkg.need_tar = true
-  end
 end
 
 namespace :docs do
