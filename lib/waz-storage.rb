@@ -1,4 +1,12 @@
-%w{time cgi base64 rexml/document rexml/xpath restclient hmac-sha2 net/http}.each(&method(:require))
+require 'time'
+require 'cgi' 
+require 'base64'
+require 'rexml/document'
+require 'rexml/xpath'
+require 'restclient' 
+require 'hmac-sha2'
+require 'net/http'
+
 app_files = File.expand_path(File.join(File.dirname(__FILE__), 'waz', 'storage', '*.rb'))
 Dir[app_files].each(&method(:load))
 
