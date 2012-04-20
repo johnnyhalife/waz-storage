@@ -1,10 +1,10 @@
-= Why this fork .
+= Why this fork ?
 
-The main difference with the original library is the adding of the methods "railsetage"
-This method add to any blob object an "x_ms_meta_railsetag" header, which value is calculated as a rails etag (Digest::MD5.hexdigest(file))
+The main difference with the original library is the adding of the method "railsetag".
+This method add to any blob object an "x_ms_meta_railsetag" header, its value is calculated as the rails etag way (Digest::MD5.hexdigest(file))
 
 By doing so we can easily know if a locale copy of a file is up-to-date on Azure CDN.
-This is very much used in the waz-sync gem which purpose is to sync file between local storage and Azure. 
+This is very much used in the "waz-sync" gem which purpose is to sync file between local storage and Azure. 
 
 = Windows Azure Storage library — simple gem for accessing WAZ‘s Storage REST API 
 A simple implementation of Windows Azure Storage API for Ruby, inspired by the S3 gems and self experience of dealing with queues. The major
