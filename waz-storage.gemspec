@@ -1,6 +1,4 @@
 # -*- encoding: utf-8 -*-
-require 'lib/waz/storage/version'
-
 Gem::Specification.new do |gem|
   gem.authors       = ['Johnny G. Halife']
   gem.email         = ['johnny.halife@me.com']
@@ -13,7 +11,7 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.name          = "waz-storage"
   gem.require_paths = ["lib"]
-  gem.version       = Gem::Version.new(WAZ::Storage::Version)
+  gem.version       = "1.1.2"
   
   gem.test_files    = Dir['tests/**/*']
 
