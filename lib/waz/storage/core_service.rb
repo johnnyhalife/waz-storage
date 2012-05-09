@@ -68,7 +68,7 @@ module WAZ
       # the canonicalized header line and the canonical form of the message, all of the joined by \n character. Encoded with 
       # Base64 and encrypted with SHA256 using the access_key as the seed.
       def generate_signature(options = {})
-        return generate_signature20090919(options) if options[:headers]["x-ms-version"] == "2009-09-19"
+        return generate_signature20090919(options) if options[:headers]["x-ms-version"] == "2011-08-18"
 
         signature = options[:method].to_s.upcase + "\x0A" +
                      (options[:headers]["Content-MD5"] or "") + "\x0A" +

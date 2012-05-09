@@ -145,7 +145,8 @@ module WAZ
           properties = self.class.service_instance.get_blob_properties("#{self.name}/#{blob_name}")
           return BlobObject.new(:name => blob_name, 
                                 :url => self.class.service_instance.generate_request_uri("#{self.name}/#{blob_name}"),
-                                :content_type => properties[:content_type])
+                                :content_type => properties[:content_type],
+                                :railsetag => properties[:x_ms_meta_railsetag])
         rescue RestClient::ResourceNotFound
           return nil
         end
