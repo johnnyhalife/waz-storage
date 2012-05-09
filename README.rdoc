@@ -1,11 +1,3 @@
-= Why this fork ?
-
-The main difference with the original library is the adding of the method "railsetag".
-This method add to any blob object an "x_ms_meta_railsetag" header, its value is calculated as the rails etag way (Digest::MD5.hexdigest(file))
-
-By doing so we can easily know if a locale copy of a file is up-to-date on Azure CDN.
-This is very much used in the "waz-sync" gem which purpose is to sync file between local storage and Azure. 
-
 = Windows Azure Storage library — simple gem for accessing WAZ‘s Storage REST API 
 A simple implementation of Windows Azure Storage API for Ruby, inspired by the S3 gems and self experience of dealing with queues. The major
 goal of the whole gem is to enable ruby developers [like me =)] to leverage Windows Azure Storage features and have another option 
@@ -22,6 +14,14 @@ Full documentation for the gem is available at http://waz-storage.heroku.com
 === How does this differ from <em>waz-queues</em> and <em>waz-blobs</em> work?
 Well, this is a sum up of the whole experience of writing those gems and getting them to work together to simplify 
 end user experience. Although there're some breaking changes, it's pretty backward compatible with existing gems.
+
+=== What's new on v1.1.2?
+
+The main difference with the original library is the adding of the method "railsetag".
+This method add to any blob object an "x_ms_meta_railsetag" header, its value is calculated as the rails etag way (Digest::MD5.hexdigest(file))
+
+By doing so we can easily know if a locale copy of a file is up-to-date on Azure CDN.
+This is very much used in the "waz-sync" gem which purpose is to sync file between local storage and Azure. 
 
 === What's new on the v1.1 version? [thanks to smarx]
 - Upload from stream, plus XML/URI escaping in various places, and a few other minor fixes 
@@ -298,7 +298,7 @@ The things listed above do not represent any sort of priority, or the order they
 
 Written by Johnny G. Halife (johnny.halife at me dot com)
 
-contributed by: Ezequiel Morito (http://twitter.com/ezequielm), Juan Pablo Garcia (http://twitter.com/jpgd), Steve Marx (http://twitter.com/smarx)
+contributed by: Ezequiel Morito (http://twitter.com/ezequielm), Juan Pablo Garcia (http://twitter.com/jpgd), Steve Marx (http://twitter.com/smarx), G. Montard (http://github.com/gmontard)
 
 Released under the MIT License: http://www.opensource.org/licenses/mit-license.php
 
