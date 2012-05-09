@@ -10,7 +10,7 @@ module WAZ
       # When the options :include => 'metadata' is passed it returns
       # the corresponding metadata for each queue on the listing.
       def list_queues(options ={})
-        content = execute(:get, nil, { :comp => 'list' }.merge!(options), { :x_ms_version => "2009-09-19" })
+        content = execute(:get, nil, { :comp => 'list' }.merge!(options), { :x_ms_version => "2011-08-18" })
         doc = REXML::Document.new(content)
         queues = []
         
@@ -31,22 +31,22 @@ module WAZ
       # Creates a queue on the current storage account. Throws WAZ::Queues::QueueAlreadyExists when 
       # existing metadata and given metadata differ.
       def create_queue(queue_name, metadata = {})
-        execute(:put, queue_name, nil, metadata.merge!(:x_ms_version => '2009-09-19'))
+        execute(:put, queue_name, nil, metadata.merge!(:x_ms_version => '2011-08-18'))
       end
       
       # Deletes the given queue from the current storage account.
       def delete_queue(queue_name)
-        execute(:delete, queue_name, {}, {:x_ms_version => '2009-09-19'})
+        execute(:delete, queue_name, {}, {:x_ms_version => '2011-08-18'})
       end
       
       # Gets the given queue metadata.
       def get_queue_metadata(queue_name)
-        execute(:head, queue_name, { :comp => 'metadata'}, :x_ms_version => '2009-09-19').headers
+        execute(:head, queue_name, { :comp => 'metadata'}, :x_ms_version => '2011-08-18').headers
       end
       
       # Sets the given queue metadata.
       def set_queue_metadata(queue_name, metadata = {})
-        execute(:put, queue_name, { :comp => 'metadata' }, metadata.merge!(:x_ms_version => '2009-09-19'))
+        execute(:put, queue_name, { :comp => 'metadata' }, metadata.merge!(:x_ms_version => '2011-08-18'))
       end
       
       # Enqueues a message on the current queue.
@@ -55,7 +55,7 @@ module WAZ
       # is omitted, the default time-to-live is 7 days.
       def enqueue(queue_name, message_payload, ttl = 604800)
         payload = "<?xml version=\"1.0\" encoding=\"utf-8\"?><QueueMessage><MessageText>#{message_payload}</MessageText></QueueMessage>"
-        execute(:post, "#{queue_name}/messages", { :messagettl => ttl }, { 'Content-Type' => 'application/xml', :x_ms_version => "2009-09-19"}, payload)
+        execute(:post, "#{queue_name}/messages", { :messagettl => ttl }, { 'Content-Type' => 'application/xml', :x_ms_version => "2011-08-18"}, payload)
       end
       
       # Locks N messages (1 default) from the given queue.
@@ -66,7 +66,7 @@ module WAZ
       def get_messages(queue_name, options = {})
         raise WAZ::Queues::OptionOutOfRange, {:name => :num_of_messages, :min => 1, :max => 32} if (options.keys.include?(:num_of_messages) && (options[:num_of_messages].to_i < 1 || options[:num_of_messages].to_i > 32))
         raise WAZ::Queues::OptionOutOfRange, {:name => :visibility_timeout, :min => 1, :max => 7200} if (options.keys.include?(:visibility_timeout) && (options[:visibility_timeout].to_i < 1 || options[:visibility_timeout].to_i > 7200))
-        content = execute(:get, "#{queue_name}/messages", options, {:x_ms_version => "2009-09-19"})
+        content = execute(:get, "#{queue_name}/messages", options, {:x_ms_version => "2011-08-18"})
         doc = REXML::Document.new(content)
         messages = []
         REXML::XPath.each(doc, '//QueueMessage/') do |item|
@@ -99,7 +99,7 @@ module WAZ
       
       # Marks every message on the given queue for deletion.
       def clear_queue(queue_name)
-        execute :delete, "#{queue_name}/messages", {}, :x_ms_version => '2009-09-19'
+        execute :delete, "#{queue_name}/messages", {}, :x_ms_version => '2011-08-18'
       end
     end
   end

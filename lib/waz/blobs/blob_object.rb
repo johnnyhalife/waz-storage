@@ -35,7 +35,7 @@ module WAZ
         end
       end
       
-      attr_accessor :name, :url, :content_type, :snapshot_date
+      attr_accessor :name, :url, :content_type, :snapshot_date, :railsetag
       
       # Creates a new instance of the Blob object. This constructor is internally used by the Container
       # it's initialized thru a hash that's received as parameter. It has the following requirements:
@@ -49,6 +49,7 @@ module WAZ
         self.url = options[:url]
         self.content_type = options[:content_type]
         self.snapshot_date = options[:snapshot_date]
+        self.railsetag = options[:railsetag]
       end
       
       # Returns the blob properties from Windows Azure. This properties always come as HTTP Headers and they include standard headers like

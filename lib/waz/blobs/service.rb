@@ -7,12 +7,12 @@ module WAZ
       
       # Creates a container on the current Windows Azure Storage account.
       def create_container(container_name)
-        execute :put, container_name, {:restype => 'container'}, {:x_ms_version => '2009-09-19'}
+        execute :put, container_name, {:restype => 'container'}, {:x_ms_version => '2011-08-18'}
       end
       
       # Retrieves all the properties existing on the container.
       def get_container_properties(container_name)
-        execute(:get, container_name, {:restype => 'container'}, {:x_ms_version => '2009-09-19'}).headers
+        execute(:get, container_name, {:restype => 'container'}, {:x_ms_version => '2011-08-18'}).headers
       end
       
       # Set the container properties (metadata). 
@@ -20,14 +20,14 @@ module WAZ
       # Remember that custom properties should be named as :x_ms_meta_{propertyName} in order
       # to have Windows Azure to persist them.
       def set_container_properties(container_name, properties = {})
-        execute :put, container_name, { :restype => 'container', :comp => 'metadata' }, properties.merge!({:x_ms_version => '2009-09-19'})
+        execute :put, container_name, { :restype => 'container', :comp => 'metadata' }, properties.merge!({:x_ms_version => '2011-08-18'})
       end
       
       # Retrieves the value of the :x_ms_prop_publicaccess header from the
       # container properties indicating whether the container is publicly 
       # accessible or not.
       def get_container_acl(container_name)
-        headers = execute(:get, container_name, { :restype => 'container', :comp => 'acl' }, {:x_ms_version => '2009-09-19'}).headers
+        headers = execute(:get, container_name, { :restype => 'container', :comp => 'acl' }, {:x_ms_version => '2011-08-18'}).headers
         headers[:x_ms_blob_public_access]
       end
 
@@ -37,7 +37,7 @@ module WAZ
       #
       # Default is _false_
       def set_container_acl(container_name, public_available = WAZ::Blobs::BlobSecurity::Private)
-        publicity = {:x_ms_version => '2009-09-19' }
+        publicity = {:x_ms_version => '2011-08-18' }
         publicity[:x_ms_blob_public_access] = public_available unless public_available == WAZ::Blobs::BlobSecurity::Private
         execute :put, container_name, { :restype => 'container', :comp => 'acl' }, publicity
       end
@@ -57,12 +57,12 @@ module WAZ
 
       # Deletes the given container from the Windows Azure Storage account.
       def delete_container(container_name)
-        execute :delete, container_name, {:restype => 'container'}, {:x_ms_version => '2009-09-19'}
+        execute :delete, container_name, {:restype => 'container'}, {:x_ms_version => '2011-08-18'}
       end
 
       # Lists all the blobs inside the given container.
       def list_blobs(container_name)
-        content = execute(:get, container_name, { :restype => 'container', :comp => 'list'}, {:x_ms_version => '2009-09-19'})
+        content = execute(:get, container_name, { :restype => 'container', :comp => 'list'}, {:x_ms_version => '2011-08-18'})
         doc = REXML::Document.new(content)
         containers = []
         REXML::XPath.each(doc, '//Blob/') do |item|
@@ -82,7 +82,7 @@ module WAZ
       #
       # metadata is a hash that stores all the properties that you want to add to the blob when creating it.
       def put_blob(path, payload, content_type = "application/octet-stream", metadata = {})
-        default_headers = {"Content-Type" => content_type, :x_ms_version => "2009-09-19", :x_ms_blob_type => "BlockBlob"}
+        default_headers = {"Content-Type" => content_type, :x_ms_version => "2011-08-18", :x_ms_blob_type => "BlockBlob", :x_ms_meta_railsetag => Digest::MD5.hexdigest(payload)}
         execute :put, path, nil, metadata.merge(default_headers), payload
       end
 
@@ -94,38 +94,38 @@ module WAZ
       #
       # metadata is a hash that stores all the properties that you want to add to the blob when creating it.
       def put_block_list(path, blockids, content_type = "application/octet-stream", metadata = {})
-        default_headers = {"Content-Type" => content_type, :x_ms_version => "2009-09-19"}
+        default_headers = {"Content-Type" => content_type, :x_ms_version => "2011-08-18"}
         execute :put, path, { :comp => 'blocklist' }, metadata.merge(default_headers), '<?xml version="1.0" encoding="utf-8"?><BlockList>' + blockids.map {|id| "<Latest>#{id.rstrip}</Latest>"}.join + '</BlockList>'
       end
 
       # Retrieves a blob (content + headers) from the current path.
       def get_blob(path, options = {})
-        execute :get, path, options, {:x_ms_version => "2009-09-19"}
+        execute :get, path, options, {:x_ms_version => "2011-08-18"}
       end
 
       # Deletes the blob existing on the current path.
       def delete_blob(path)
-        execute :delete, path, nil, {:x_ms_version => "2009-09-19"}
+        execute :delete, path, nil, {:x_ms_version => "2011-08-18"}
       end
             
       # Retrieves the properties associated with the blob at the given path.
       def get_blob_properties(path, options = {})
-        execute(:head, path, options, {:x_ms_version => "2009-09-19"}).headers
+        execute(:head, path, options, {:x_ms_version => "2011-08-18"}).headers
       end
 
       # Sets the properties (metadata) associated to the blob at given path.
       def set_blob_properties(path, properties ={})
-        execute :put, path, { :comp => 'properties' }, properties.merge({:x_ms_version => "2009-09-19"})
+        execute :put, path, { :comp => 'properties' }, properties.merge({:x_ms_version => "2011-08-18"})
       end
       
       # Set user defined metadata - overwrites any previous metadata key:value pairs
       def set_blob_metadata(path, metadata = {}) 
-        execute :put, path, { :comp => 'metadata' }, metadata.merge({:x_ms_version => "2009-09-19"})
+        execute :put, path, { :comp => 'metadata' }, metadata.merge({:x_ms_version => "2011-08-18"})
       end 
 
       # Copies a blob within the same account (not necessarily to the same container)
       def copy_blob(source_path, dest_path)
-        execute :put, dest_path, nil, { :x_ms_version => "2009-09-19", :x_ms_copy_source => canonicalize_message(source_path) }
+        execute :put, dest_path, nil, { :x_ms_version => "2011-08-18", :x_ms_copy_source => canonicalize_message(source_path) }
       end
       
       # Adds a block to the block list of the given blob
@@ -149,7 +149,7 @@ module WAZ
       
       # Creates a read-only snapshot of a blob as it looked like in time.
       def snapshot_blob(path)
-        execute(:put, path, { :comp => 'snapshot' }, {:x_ms_version => "2009-09-19"}).headers[:x_ms_snapshot]
+        execute(:put, path, { :comp => 'snapshot' }, {:x_ms_version => "2011-08-18"}).headers[:x_ms_snapshot]
       end
     end
   end
