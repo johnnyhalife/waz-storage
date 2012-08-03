@@ -15,6 +15,9 @@ Full documentation for the gem is available at http://waz-storage.heroku.com
 Well, this is a sum up of the whole experience of writing those gems and getting them to work together to simplify 
 end user experience. Although there're some breaking changes, it's pretty backward compatible with existing gems.
 
+=== What's new on v1.1.4?
+- Fixes an issue with Double Encoding (thanks Phil Ibis!)
+
 === What's new on v1.1.2?
 
 The main difference with the original library is the adding of the method "railsetag".
