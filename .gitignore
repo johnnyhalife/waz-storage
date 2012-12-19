@@ -5,3 +5,5 @@ rdoc/*
 sdk/*
 sdk
 .rvmrc
+vendor/
+.bundle
