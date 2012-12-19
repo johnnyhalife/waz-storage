@@ -1,5 +1,5 @@
 # enabling the load of files from root (on RSpec)
-$LOAD_PATH.unshift(File.dirname(__FILE__) + '/../')
+$LOAD_PATH.unshift(File.dirname(__FILE__) + '/../../../')
 require 'tests/configuration'
 require 'lib/waz-blobs'
 

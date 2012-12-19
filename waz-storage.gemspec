@@ -22,6 +22,6 @@ Gem::Specification.new do |gem|
   gem.add_dependency 'ruby-hmac'
   
   gem.add_development_dependency 'rspec'
-  gem.add_development_dependency 'rcov'
+  gem.add_development_dependency 'simplecov'
   gem.add_development_dependency 'mocha'
 end
