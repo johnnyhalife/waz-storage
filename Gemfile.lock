@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    waz-storage (1.1.2)
+    waz-storage (1.2.0)
       rest-client
       ruby-hmac
 
@@ -14,6 +14,7 @@ GEM
     mocha (0.10.5)
       metaclass (~> 0.0.1)
     multi_json (1.5.0)
+    rake (10.0.2)
     rest-client (1.6.7)
       mime-types (>= 1.16)
     rspec (2.9.0)
@@ -35,6 +36,7 @@ PLATFORMS
 
 DEPENDENCIES
   mocha
+  rake
   rspec
   simplecov
   waz-storage!
