@@ -1,21 +1,8 @@
 #!/usr/bin/env rake
 require 'rspec/core/rake_task'
-require 'rake/rdoctask'
 require 'bundler/gem_tasks'
 
-RSpec::Core::RakeTask.new do |t|
-  t.name = :specs
-  t.pattern = "tests/**/*_test.rb"
+RSpec::Core::RakeTask.new(:spec) do |t|
+  t.pattern = "spec/**/*_spec.rb"
   t.rspec_opts = ['-cfn']
-end
-
-namespace :docs do
-  Rake::RDocTask.new do |t|
-  	t.rdoc_dir = 'rdoc'
-  	t.title    = "Windows Azure Storage library - simple gem for accessing WAZ's Storage REST API"
-  	t.options << '--line-numbers' << '--inline-source' << '-A cattr_accessor=object'
-  	t.options << '--charset' << 'utf-8'
-  	t.rdoc_files.include('README.rdoc')
-  	t.rdoc_files.include('lib/**/*.rb')
-  end
-end
+end  
