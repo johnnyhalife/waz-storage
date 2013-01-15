@@ -83,7 +83,18 @@ module WAZ
       def metadata
         self.class.service_instance.get_container_properties(self.name)
       end
-      
+
+      # Returns statistics of the container.
+      #
+      # @param [Hash] options
+      # @option options [String] :maxresults max blobs(5,000 at most)
+      # @option options [String] :marker marker of a page("2!80!MDAwMDE0***********--")
+      #
+      # @return [Hash] {:size => Integer, :files => Integer, :marker => String}
+      def statistics(options)
+        self.class.service_instance.statistics(self.name, options)
+      end
+
       # Adds metadata for the container.Those properties are sent as HTTP Headers it's really important that you name your custom 
       # properties with the <em>x-ms-meta</em> prefix, if not the won't be persisted by the Windows Azure Blob Storage API.
       def put_properties!(properties = {})
