@@ -96,7 +96,7 @@ module WAZ
         end
 
         next_marker = REXML::XPath.first(doc, '//NextMarker')
-        {:size => size, :files => files, :marker => next_marker.text.length == 0 ? nil : next_marker.text}
+        {:size => size, :files => files, :next_marker => next_marker.text}
       end
 
       # Stores a blob on the given container.

@@ -76,7 +76,7 @@ describe "Windows Azure Containers interface API" do
 
   it "should be able to return statistics of the container" do
     options = {:maxresults => 100, :marker => "marker"}
-    expected_values = {:size => 200, :files => 100, :marker => "next-marker"}
+    expected_values = {:size => 200, :files => 100, :next_marker => "next-marker"}
     WAZ::Storage::Base.stubs(:default_connection).returns({:account_name => "my_account", :access_key => "key"})
     WAZ::Blobs::Service.any_instance.expects(:get_container_properties).with("container-name").returns({:x_ms_meta_name => "container-name"})
     WAZ::Blobs::Service.any_instance.expects(:statistics).with("container-name", options).returns(expected_values)
@@ -84,7 +84,7 @@ describe "Windows Azure Containers interface API" do
     statistics = container.statistics(options)
     statistics[:size].should == 200
     statistics[:files].should == 100
-    statistics[:marker].should == "next-marker"
+    statistics[:next_marker].should == "next-marker"
   end
   
   it "should destroy container" do

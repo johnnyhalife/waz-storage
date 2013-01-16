@@ -176,7 +176,7 @@ describe "blobs service behavior" do
     statistics = service.statistics("container", add_options)
     statistics[:size].should == 13
     statistics[:files].should == 2
-    statistics[:marker].should == 'test-marker'
+    statistics[:next_marker].should == 'test-marker'
   end
 
   it "should put blob" do
