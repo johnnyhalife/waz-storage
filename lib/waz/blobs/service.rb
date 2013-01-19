@@ -74,6 +74,31 @@ module WAZ
         return containers
       end
 
+      # Returns statistics of the given container.
+      #
+      # @param [String] container_name
+      # @param [Hash] add_options
+      # @option add_options [String] :maxresults max blobs(5,000 at most)
+      # @option add_options [String] :marker marker of a page("2!80!MDAwMDE0***********--")
+      #
+      # @return [Hash] {:size => Integer, :files => Integer, :marker => String}
+      def statistics(container_name, add_options={})
+        options = { :restype => 'container', :comp => 'list'}
+        options.merge!(add_options)
+
+        content = execute(:get, container_name, options, {:x_ms_version => '2011-08-18'})
+        doc = REXML::Document.new(content)
+        size = 0
+        files = 0
+        REXML::XPath.each(doc, '//Blob/') do |item|
+          size = size + REXML::XPath.first(item.elements["Properties"], "Content-Length").text.to_i
+          files = files + 1
+        end
+
+        next_marker = REXML::XPath.first(doc, '//NextMarker')
+        {:size => size, :files => files, :next_marker => next_marker.text}
+      end
+
       # Stores a blob on the given container.
       # 
       # Remarks path and payload are just text.

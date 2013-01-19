@@ -125,6 +125,60 @@ describe "blobs service behavior" do
     blobs[1][:content_type].should == "application/x-stream"
   end
 
+  it "should statistics" do
+    response = <<-eos
+                <?xml version='1.0' encoding='UTF-8'?>
+                <EnumerationResults ContainerName='http://myaccount.blob.core.windows.net/hiro-test'>
+                  <Blobs>
+                    <Blob>
+                      <Name>000/000000.txt</Name>
+                      <Url>http://myaccount.blob.core.windows.net/hiro-test/000/000000.txt</Url>
+                      <Properties>
+                        <Last-Modified>Mon, 07 Jan 2013 05:31:13 GMT</Last-Modified>
+                        <Etag>0x8CFBAAF57E5A6C5</Etag>
+                        <Content-Length>1</Content-Length>
+                        <Content-Type>application/octet-stream</Content-Type>
+                        <Content-Encoding/>
+                        <Content-Language/>
+                        <Content-MD5/>
+                        <Cache-Control/>
+                        <BlobType>BlockBlob</BlobType>
+                        <LeaseStatus>unlocked</LeaseStatus>
+                      </Properties>
+                    </Blob>
+                    <Blob>
+                      <Name>000/000001.txt</Name>
+                      <Url>http://myaccount.blob.core.windows.net/hiro-test/000/000001.txt</Url>
+                      <Properties>
+                        <Last-Modified>Mon, 07 Jan 2013 05:31:15 GMT</Last-Modified>
+                        <Etag>0x8CFBAAF58DF9D8B</Etag>
+                        <Content-Length>12</Content-Length>
+                        <Content-Type>application/octet-stream</Content-Type>
+                        <Content-Encoding/>
+                        <Content-Language/>
+                        <Content-MD5/>
+                        <Cache-Control/>
+                        <BlobType>BlockBlob</BlobType>
+                        <LeaseStatus>unlocked</LeaseStatus>
+                      </Properties>
+                    </Blob>
+                  </Blobs>
+                  <NextMarker>test-marker</NextMarker>
+                </EnumerationResults>
+    eos
+    options = {:restype => 'container', :comp => 'list'}
+    add_options = {:maxresults => 1000}
+
+    service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
+    RestClient::Request.any_instance.expects(:execute).returns(response)
+    service.expects(:generate_request_uri).with("container", options.merge(add_options)).returns("mock-uri")
+    service.expects(:generate_request).with(:get, "mock-uri", {:x_ms_version => '2011-08-18'}, nil).returns(RestClient::Request.new(:method => :get, :url => "http://localhost"))
+    statistics = service.statistics("container", add_options)
+    statistics[:size].should == 13
+    statistics[:files].should == 2
+    statistics[:next_marker].should == 'test-marker'
+  end
+
   it "should put blob" do
     service = WAZ::Blobs::Service.new(:account_name => "mock-account", :access_key => "mock-key", :type_of_service => "queue", :use_ssl => true, :base_url => "localhost")
     RestClient::Request.any_instance.expects(:execute).returns(nil)
