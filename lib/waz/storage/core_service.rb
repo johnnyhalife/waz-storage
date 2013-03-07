@@ -4,6 +4,7 @@ module WAZ
     # this module is imported from WAZ::Queues::Service and WAZ::Blobs::Service.
     module SharedKeyCoreService
       attr_accessor :account_name, :access_key, :use_ssl, :base_url, :type_of_service, :use_devenv, :use_sas_auth_only, :sharedaccesssignature
+      attr_accessor :retry_count
       
       # Creates an instance of the implementor service (internally used by the API).
       def initialize(options = {})
@@ -17,7 +18,8 @@ module WAZ
         self.use_ssl = options[:use_ssl] or false
         self.use_devenv = !!options[:use_devenv]
         self.base_url = "#{options[:type_of_service] or "blobs"}.#{options[:base_url] or "core.windows.net"}" unless self.use_devenv
-        self.base_url ||= (options[:base_url] or "core.windows.net") 
+        self.base_url ||= (options[:base_url] or "core.windows.net")
+        self.retry_count = (options[:retry_count] or 5)
       end
       
       # Generates a request based on Adam Wiggings' rest-client, including all the required headers
@@ -116,7 +118,17 @@ module WAZ
         escaped_path = path.split("/").map{ | part | CGI.escape(part) }.join("/")
         url = generate_request_uri(escaped_path, query)
         request = generate_request(verb, url, headers, payload)
-        request.execute()
+
+        errors = 0
+        begin
+          request.execute()
+        rescue Errno::ETIMEDOUT, Errno::ECONNREFUSED, Errno::ECONNRESET => e
+          errors += 1
+          if errors > self.retry_count
+            raise e.class, e.message, e.backtrace
+          end
+          retry
+        end
       end
     end
   end
