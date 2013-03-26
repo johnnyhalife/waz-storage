@@ -11,7 +11,7 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.name          = "waz-storage"
   gem.require_paths = ["lib"]
-  gem.version       = "1.3.3"
+  gem.version       = "1.3.4"
   
   gem.test_files    = Dir['tests/**/*']
 
