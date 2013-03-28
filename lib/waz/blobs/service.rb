@@ -119,7 +119,7 @@ module WAZ
       #
       # metadata is a hash that stores all the properties that you want to add to the blob when creating it.
       def put_block_list(path, blockids, content_type = "application/octet-stream", metadata = {})
-        default_headers = {"Content-Type" => content_type, :x_ms_version => "2011-08-18"}
+        default_headers = {"Content-Type" => "application/xml", "x-ms-blob-content-type" => content_type, :x_ms_version => "2011-08-18"}
         execute :put, path, { :comp => 'blocklist' }, metadata.merge(default_headers), '<?xml version="1.0" encoding="utf-8"?><BlockList>' + blockids.map {|id| "<Latest>#{id.rstrip}</Latest>"}.join + '</BlockList>'
       end
 
