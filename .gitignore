@@ -7,3 +7,4 @@ sdk
 .rvmrc
 vendor/
 .bundle
+*.gem
