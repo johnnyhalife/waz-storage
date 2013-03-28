@@ -29,7 +29,7 @@ module WAZ
         http_headers = {}
         headers.each{ |k, v| http_headers[k.to_s.gsub(/_/, '-')] = v} unless headers.nil?
         http_headers.merge!("x-ms-Date" => Time.new.httpdate)
-        http_headers.merge!("Content-Length" => (payload or "").size)
+        http_headers.merge!("Content-Length" => (payload or "").bytesize)
         request = {:headers => http_headers, :method => verb.to_s.downcase.to_sym, :url => url, :payload => payload}
         request[:headers].merge!("Authorization" => "SharedKey #{account_name}:#{generate_signature(request)}") unless self.use_sas_auth_only 
         return RestClient::Request.new(request)
