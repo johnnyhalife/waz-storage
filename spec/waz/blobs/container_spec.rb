@@ -171,5 +171,13 @@ describe "Windows Azure Containers interface API" do
   it "should raise an exception when container name is longer than 63" do
     lambda { WAZ::Blobs::Container.create('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')  }.should raise_error(WAZ::Storage::InvalidParameterValue)
   end
+  
+  it "should raise an exception when container name include dollar but isn't root" do
+    lambda { WAZ::Blobs::Container.create('$roots')  }.should raise_error(WAZ::Storage::InvalidParameterValue)
+  end
+  
+  it "should not raise an exception when container name is '$root'" do
+    lambda { WAZ::Blobs::Container.create('$root')  }.should_not raise_error(WAZ::Storage::InvalidParameterValue)
+  end
 
 end
